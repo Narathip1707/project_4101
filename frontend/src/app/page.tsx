@@ -49,11 +49,19 @@ export default function Home() {
       <div className="text-center text-black">
         <h1 className="text-3xl font-bold mb-4">ระบบจัดการโครงงานพิเศษ</h1>
         <p className="text-2xl mb-4">กรุณาเข้าสู่ระบบหรือลงทะเบียนเพื่อเริ่มต้น</p>
-        <Link href="/login" className="text-blue-500 hover:underline">
-         <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-          เข้าสู่ระบบ
-         </button>
-        </Link>
+        <div className="flex justify-center space-x-4">
+          <Link href="/login" className="text-blue-500 hover:underline">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+              เข้าสู่ระบบ
+            </button>
+          </Link>
+          <Link href="/signup" className="text-blue-500 hover:underline ml-4">
+            <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+              ลงทะเบียน
+            </button>
+          </Link>
+        </div>
+
       </div>
     </div>
   );

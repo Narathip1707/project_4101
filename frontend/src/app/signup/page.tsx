@@ -69,7 +69,7 @@ export default function SignUp() {
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-400"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black"
             >
               <option value="student">นักศึกษา</option>
               <option value="advisor">อาจารย์</option>
