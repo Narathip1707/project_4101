@@ -8,15 +8,23 @@ import (
 )
 
 type User struct {
-	ID           string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	Email        string    `gorm:"type:varchar(255);unique;not null"`
-	PasswordHash string    `gorm:"type:varchar(255);not null"`
-	FullName     string    `gorm:"type:varchar(255);not null"`
-	Role         string    `gorm:"type:varchar(20);not null"`
-	IsVerified   bool      `gorm:"default:false"`
-	CreatedAt    time.Time `gorm:"type:timestamp"` // เปลี่ยนจาก int64 เป็น time.Time
-	UpdatedAt    time.Time `gorm:"type:timestamp"` // เปลี่ยนจาก int64 เป็น time.Time
-	Password     string    `gorm:"-"`              // Temporary field for password handling
+	ID                   string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	Email                string    `gorm:"type:varchar(255);unique;not null"`
+	PasswordHash         string    `gorm:"type:varchar(255);not null"`
+	FullName             string    `gorm:"type:varchar(255);not null"`
+	StudentID            string    `gorm:"type:varchar(20)"`
+	EmployeeID           string    `gorm:"type:varchar(20)"`
+	Role                 string    `gorm:"type:varchar(20);not null;check:role IN ('student', 'advisor', 'admin')"`
+	Department           string    `gorm:"type:varchar(100);default:'วิทยาการคอมพิวเตอร์'"`
+	Phone                string    `gorm:"type:varchar(20)"`
+	IsVerified           bool      `gorm:"default:false"`
+	VerificationToken    string    `gorm:"type:varchar(255)"`
+	PasswordResetToken   string    `gorm:"type:varchar(255)"`
+	PasswordResetExpires time.Time `gorm:"type:timestamp"`
+	ProfileImage         string    `gorm:"type:text"`
+	CreatedAt            time.Time `gorm:"type:timestamp;autoCreateTime"`
+	UpdatedAt            time.Time `gorm:"type:timestamp;autoUpdateTime"`
+	Password             string    `gorm:"-"` // Temporary field for password handling
 }
 
 // BeforeCreate handles password hashing before saving to database
@@ -27,6 +35,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 			return err
 		}
 		u.PasswordHash = hashedPassword
+		u.Password = ""
 	}
 	return nil
 }
@@ -41,4 +50,10 @@ func HashPassword(password string) (string, error) {
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+// BeforeSave updates UpdatedAt before saving
+func (u *User) BeforeSave(tx *gorm.DB) (err error) {
+	u.UpdatedAt = time.Now()
+	return nil
 }
