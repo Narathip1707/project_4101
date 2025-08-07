@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -45,9 +46,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
+      <div className="text-center text-black">
         <h1 className="text-3xl font-bold mb-4">ระบบจัดการโครงงานพิเศษ</h1>
-        <p className="mb-4">กรุณาเข้าสู่ระบบหรือลงทะเบียนเพื่อเริ่มต้น</p>
+        <p className="text-2xl mb-4">กรุณาเข้าสู่ระบบหรือลงทะเบียนเพื่อเริ่มต้น</p>
+        <Link href="/login" className="text-blue-500 hover:underline">
+         <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+          เข้าสู่ระบบ
+         </button>
+        </Link>
       </div>
     </div>
   );

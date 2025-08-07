@@ -50,7 +50,7 @@ export default function SignUp() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">ลงทะเบียน</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center text-black ">ลงทะเบียน</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">ชื่อ-นามสกุล</label>
@@ -59,7 +59,7 @@ export default function SignUp() {
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
               placeholder="กรุณาใส่ชื่อ-นามสกุล"
             />
           </div>
@@ -69,7 +69,7 @@ export default function SignUp() {
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-400"
             >
               <option value="student">นักศึกษา</option>
               <option value="advisor">อาจารย์</option>
@@ -82,7 +82,7 @@ export default function SignUp() {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
               placeholder="กรุณาใส่เบอร์โทรศัพท์"
             />
           </div>
@@ -93,7 +93,7 @@ export default function SignUp() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
               placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
             />
           </div>
@@ -104,14 +104,14 @@ export default function SignUp() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
               placeholder="กรุณาใส่รหัสผ่าน"
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
           >
             ลงทะเบียน
           </button>

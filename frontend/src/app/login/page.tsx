@@ -40,7 +40,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">เข้าสู่ระบบ</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center text-black">เข้าสู่ระบบ</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">อีเมล</label>
@@ -49,7 +49,7 @@ export default function Login() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
               placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
             />
           </div>
@@ -60,14 +60,14 @@ export default function Login() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
               placeholder="กรุณาใส่รหัสผ่าน"
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
           >
             เข้าสู่ระบบ
           </button>
