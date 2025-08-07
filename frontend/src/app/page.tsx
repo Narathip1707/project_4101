@@ -18,8 +18,8 @@ export default function Home() {
   if (isLoggedIn && user) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
-        <h1 className="text-3xl font-bold text-center mb-6">ยินดีต้อนรับ, {user.fullName}!</h1>
-        <p className="text-center mb-4">หน้าโฮมของระบบจัดการโครงงานพิเศษ</p>
+        <h1 className="text-3xl font-bold text-center mb-6 text-black placeholder:to-black">ยินดีต้อนรับ, {user.fullName}!</h1>
+        <p className="text-center mb-4 text-black placeholder:to-black">หน้าโฮมของระบบจัดการโครงงานพิเศษ</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
           <a
             href="/projects"
