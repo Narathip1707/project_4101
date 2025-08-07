@@ -57,7 +57,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">ระบบจัดการโครงงานพิเศษ</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center text-black">ระบบจัดการโครงงานพิเศษ</h1>
         <button
           onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
           className="mb-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
@@ -75,7 +75,7 @@ export default function Home() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-600"
                   placeholder="กรุณาใส่ชื่อ-นามสกุล"
                 />
               </div>
@@ -85,7 +85,7 @@ export default function Home() {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-600"
                 >
                   <option value="student">นักศึกษา</option>
                   <option value="advisor">อาจารย์</option>
@@ -98,7 +98,7 @@ export default function Home() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-600"
                   placeholder="กรุณาใส่เบอร์โทรศัพท์"
                 />
               </div>
@@ -112,7 +112,7 @@ export default function Home() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-600"
               placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
             />
           </div>
@@ -124,7 +124,7 @@ export default function Home() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-600"
               placeholder="กรุณาใส่รหัสผ่าน"
             />
           </div>
@@ -132,7 +132,7 @@ export default function Home() {
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
+            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-900"
           >
             {isSignUp ? 'ลงทะเบียน' : 'เข้าสู่ระบบ'}
           </button>
