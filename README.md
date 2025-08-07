@@ -1,4 +1,4 @@
-# Project 4101 - Database Setup Guide
+### Project 4101 - Database Setup Guide
 
 This README provides step-by-step instructions to set up the database for the Project 4101 management system, as developed with Grok 3 by xAI. The database is built using PostgreSQL and includes all necessary tables and configurations.
 
