@@ -9,14 +9,14 @@ import (
 
 type User struct {
 	ID                   string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	Email                string    `gorm:"type:varchar(255);unique;not null"`
+	Email                string    `gorm:"type:varchar(255);unique;not null" validate:"required,email,endswith=@rumail.ru.ac.th"`
 	PasswordHash         string    `gorm:"type:varchar(255);not null"`
 	FullName             string    `gorm:"type:varchar(255);not null"`
 	StudentID            string    `gorm:"type:varchar(20)"`
 	EmployeeID           string    `gorm:"type:varchar(20)"`
 	Role                 string    `gorm:"type:varchar(20);not null;check:role IN ('student', 'advisor', 'admin')"`
 	Department           string    `gorm:"type:varchar(100);default:'วิทยาการคอมพิวเตอร์'"`
-	Phone                string    `gorm:"type:varchar(20)"`
+	Phone                string    `gorm:"type:varchar(20)" validate:"required,min=10,max=10"`
 	IsVerified           bool      `gorm:"default:false"`
 	VerificationToken    string    `gorm:"type:varchar(255)"`
 	PasswordResetToken   string    `gorm:"type:varchar(255)"`
@@ -25,6 +25,16 @@ type User struct {
 	CreatedAt            time.Time `gorm:"type:timestamp;autoCreateTime"`
 	UpdatedAt            time.Time `gorm:"type:timestamp;autoUpdateTime"`
 	Password             string    `gorm:"-"` // Temporary field for password handling
+
+	// เพิ่ม relationships
+	Student       *Student       `gorm:"foreignKey:UserID"`
+	Advisor       *Advisor       `gorm:"foreignKey:UserID"`
+	ProjectFiles  []ProjectFile  `gorm:"foreignKey:UploadedBy"`
+	Notifications []Notification `gorm:"foreignKey:UserID"`
+	Logs          []Log          `gorm:"foreignKey:UserID"`
+
+	// เพิ่ม soft delete
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // BeforeCreate handles password hashing before saving to database
