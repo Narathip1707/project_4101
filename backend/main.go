@@ -14,7 +14,7 @@ var db *gorm.DB
 
 func main() {
 	// ตั้งค่า Database
-	dsn := "host=localhost user=postgres password=1234 dbname=project_management_system port=5432 sslmode=disable"
+	dsn := "host=db user=postgres password=1234 dbname=project_management_system port=5432 sslmode=disable"
 	var err error
 
 	log.Println("Connecting to database...")
