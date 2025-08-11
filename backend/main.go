@@ -20,21 +20,21 @@ func main() {
 	log.Println("กำลังเชื่อมต่อกับฐานข้อมูล...")
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Printf("เกิดข้อผิดพลาดในการเชื่อมต่อ: %v", err)
-		log.Fatal("ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้")
+		log.Printf("A connection error occurred: %v", err)
+		log.Fatal("Unable to connect to the database. Please check your connection settings.")
 	}
 
 	// เพิ่ม UUID extension
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
-		log.Fatal("ไม่สามารถสร้าง UUID extension:", err)
+		log.Fatal("Unable to create UUID extension:", err)
 	}
 
 	// ทำ Migration
 	if err := db.AutoMigrate(&models.User{}); err != nil {
-		log.Fatal("ไม่สามารถ migrate database:", err)
+		log.Fatal("Unable to migrate database:", err)
 	}
 
-	log.Println("เชื่อมต่อกับฐานข้อมูลสำเร็จ")
+	log.Println("Database connected and migrated successfully.")
 
 	// ตั้งค่า Fiber
 	app := fiber.New()
