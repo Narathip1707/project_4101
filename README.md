@@ -43,15 +43,15 @@
 - POST /api/signup  สมัครผู้ใช้ใหม่ (role เริ่มต้นเป็น student)
   - ตัวอย่างข้อมูลส่งเข้า
     {
-      "email": "someone@rumail.ru.ac.th",
-      "password": "yourpassword",
-      "fullName": "Your Name"
+      "email": "test@rumail.ru.ac.th",
+      "password": "password123",
+      "fullName": "User"
     }
 - POST /api/login  เข้าสู่ระบบ
   - ตัวอย่างข้อมูลส่งเข้า
     {
-      "email": "someone@rumail.ru.ac.th",
-      "password": "yourpassword"
+      "email": "test@rumail.ru.ac.th",
+      "password": "password123"
     }
 หมายเหตุ: ระบบจำกัดอีเมลต้องลงท้ายด้วย @rumail.ru.ac.th
 
