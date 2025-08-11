@@ -20,7 +20,7 @@ export default function Login() {
     }
 
     try {
-      const url = `http://localhost:8080/api/login`;
+      const url = `http://localhost:3001/api/login`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

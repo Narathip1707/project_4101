@@ -30,7 +30,7 @@ export default function SignUp() {
     }
 
     try {
-      const url = `http://localhost:8080/api/signup`;
+      const url = `http://localhost:3001/api/signup`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
