@@ -17,7 +17,7 @@ func main() {
 	dsn := "host=localhost user=postgres password=1234 dbname=project_management_system port=5432 sslmode=disable"
 	var err error
 
-	log.Println("กำลังเชื่อมต่อกับฐานข้อมูล...")
+	log.Println("Connecting to database...")
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Printf("A connection error occurred: %v", err)
