@@ -13,7 +13,7 @@ import (
 var db *gorm.DB
 
 func main() {
-	// ตั้งค่า Database
+	//Database configs
 	dsn := "host=db user=postgres password=1234 dbname=project_management_system port=5432 sslmode=disable"
 	var err error
 
@@ -24,19 +24,19 @@ func main() {
 		log.Fatal("Unable to connect to the database. Please check your connection settings.")
 	}
 
-	// เพิ่ม UUID extension
+	// UUID extension
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		log.Fatal("Unable to create UUID extension:", err)
 	}
 
-	// ทำ Migration
+	//Migrations
 	if err := db.AutoMigrate(&models.User{}); err != nil {
 		log.Fatal("Unable to migrate database:", err)
 	}
 
 	log.Println("Database connected and migrated successfully.")
 
-	// ตั้งค่า Fiber
+	//Fiber
 	app := fiber.New()
 	app.Use(cors.New())
 
@@ -120,15 +120,14 @@ func main() {
 		})
 	})
 
-	// เริ่มเซิร์ฟเวอร์
+	// Starting server
 	const port = ":8080"
 	log.Printf("Server running on http://localhost%s", port)
 	log.Fatal(app.Listen(port))
 }
 
 func isValidEmail(email string) bool {
-	// ตรวจสอบว่า email ไม่ว่างและลงท้ายด้วย @rumail.ru.ac.th
-	if len(email) < 15 { // "@rumail.ru.ac.th" มีความยาว 15 ตัวอักษร
+	if len(email) < 15 { // "@rumail.ru.ac.th"
 		return false
 	}
 	suffix := "@rumail.ru.ac.th"
