@@ -10,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      setIsLoggedIn(true);
+      setIsLoggedIn(true); //test
       setUser({ fullName: "Test User" }); // เปลี่ยนเป็น API Call จริง
     }
   }, []);
