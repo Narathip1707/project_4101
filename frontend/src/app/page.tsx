@@ -43,7 +43,7 @@ export default function Home() {
       </div>
     );
   }
-// dkdkdk
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="text-center text-black">
