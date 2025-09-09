@@ -30,7 +30,7 @@ export default function SignUp() {
     }
 
     try {
-      const url = `http://localhost:3001/api/signup`;
+      const url = `http://localhost:8080/api/signup`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,7 +59,7 @@ export default function SignUp() {
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
               placeholder="กรุณาใส่ชื่อ-นามสกุล"
             />
           </div>
@@ -82,7 +82,7 @@ export default function SignUp() {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
               placeholder="กรุณาใส่เบอร์โทรศัพท์"
             />
           </div>
@@ -93,7 +93,7 @@ export default function SignUp() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
               placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
             />
           </div>
@@ -104,7 +104,7 @@ export default function SignUp() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-gray-200"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
               placeholder="กรุณาใส่รหัสผ่าน"
             />
           </div>
