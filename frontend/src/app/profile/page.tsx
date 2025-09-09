@@ -159,24 +159,24 @@ export default function Profile() {
                   type="text"
                   value={editForm?.fullName || ""}
                   onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">{user.fullName}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.fullName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">รหัสนักศึกษา</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2 ">รหัสนักศึกษา</label>
               {isEditing ? (
                 <input
                   type="text"
                   value={editForm?.studentId || ""}
                   onChange={(e) => handleInputChange("studentId", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">{user.studentId}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.studentId}</p>
               )}
             </div>
 
@@ -187,10 +187,10 @@ export default function Profile() {
                   type="email"
                   value={editForm?.email || ""}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">{user.email}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.email}</p>
               )}
             </div>
 
@@ -201,10 +201,10 @@ export default function Profile() {
                   type="tel"
                   value={editForm?.phone || ""}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">{user.phone}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.phone}</p>
               )}
             </div>
 
@@ -215,10 +215,10 @@ export default function Profile() {
                   type="text"
                   value={editForm?.department || ""}
                   onChange={(e) => handleInputChange("department", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">{user.department}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.department}</p>
               )}
             </div>
 
@@ -229,10 +229,10 @@ export default function Profile() {
                   type="text"
                   value={editForm?.faculty || ""}
                   onChange={(e) => handleInputChange("faculty", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">{user.faculty}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.faculty}</p>
               )}
             </div>
 
@@ -242,7 +242,7 @@ export default function Profile() {
                 <select
                   value={editForm?.year || ""}
                   onChange={(e) => handleInputChange("year", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
                 >
                   <option value="1">ปี 1</option>
                   <option value="2">ปี 2</option>
@@ -250,7 +250,7 @@ export default function Profile() {
                   <option value="4">ปี 4</option>
                 </select>
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black">ปี {user.year}</p>
+                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">ปี {user.year}</p>
               )}
             </div>
           </div>
