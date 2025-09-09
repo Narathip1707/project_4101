@@ -34,7 +34,7 @@ services:
       DB_NAME: project_management_system
       DB_PORT: 5432
     ports:
-      - "3001:8080"
+      - "8080:8080"
 
 volumes:
   postgres_data:
