@@ -50,23 +50,59 @@ func main() {
 
 	// API Endpoint: Sign Up
 	app.Post("/api/signup", func(c *fiber.Ctx) error {
-		var user models.User
-		if err := c.BodyParser(&user); err != nil {
+		// Accept payload matching the frontend form
+		var input struct {
+			Email      string `json:"email"`
+			Password   string `json:"password"`
+			FullName   string `json:"fullName"`
+			Role       string `json:"role"`
+			Phone      string `json:"phone"`
+			StudentID  string `json:"studentId"`
+			EmployeeID string `json:"employeeId"`
+		}
+
+		if err := c.BodyParser(&input); err != nil {
 			log.Printf("Sign up body parsing error: %v", err)
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 		}
 
-		// Store plain password temporarily
-		plainPassword := user.PasswordHash
+		if input.Email == "" || input.Password == "" || input.FullName == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email, password and fullName are required"})
+		}
+
+		// Basic role default and validation
+		role := input.Role
+		if role == "" {
+			role = "student"
+		}
+		if role != "student" && role != "advisor" && role != "admin" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid role"})
+		}
+
+		// Require ID based on role
+		if role == "student" && input.StudentID == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "studentId is required for role student"})
+		}
+		if role == "advisor" && input.EmployeeID == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "employeeId is required for role advisor"})
+		}
 
 		// Hash password before saving
-		hashedPassword, err := models.HashPassword(plainPassword)
+		hashedPassword, err := models.HashPassword(input.Password)
 		if err != nil {
 			log.Printf("Password hashing error: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to process password"})
 		}
-		user.PasswordHash = hashedPassword
-		user.Role = "student" // Default role
+
+		user := models.User{
+			Email:        input.Email,
+			PasswordHash: hashedPassword,
+			FullName:     input.FullName,
+			Role:         role,
+			Phone:        input.Phone,
+			StudentID:    input.StudentID,
+			EmployeeID:   input.EmployeeID,
+		}
 
 		if err := db.Create(&user).Error; err != nil {
 			log.Printf("User creation error: %v", err)
@@ -74,7 +110,15 @@ func main() {
 		}
 
 		log.Printf("User created successfully: %s", user.Email)
-		return c.JSON(fiber.Map{"message": "Sign up successful", "user": user})
+		return c.JSON(fiber.Map{
+			"message": "Sign up successful",
+			"user": fiber.Map{
+				"id":       user.ID,
+				"email":    user.Email,
+				"fullName": user.FullName,
+				"role":     user.Role,
+			},
+		})
 	})
 
 	// API Endpoint: Login

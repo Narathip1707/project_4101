@@ -7,15 +7,18 @@ export default function SignUp() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     fullName: "",
     role: "student",
     phone: "",
+    studentId: "",
+    employeeId: "",
   });
   const [error, setError] = useState("");
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: (e.target as HTMLInputElement).value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,13 +31,34 @@ export default function SignUp() {
       setError("Email and password are required");
       return;
     }
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (formData.role === "student" && !formData.studentId) {
+      setError("กรุณาใส่รหัสนักศึกษา");
+      return;
+    }
+    if (formData.role === "advisor" && !formData.employeeId) {
+      setError("กรุณาใส่รหัสอาจารย์");
+      return;
+    }
 
     try {
       const url = `http://localhost:8080/api/signup`;
+      const body = {
+        email: formData.email,
+        password: formData.password,
+        fullName: formData.fullName,
+        role: formData.role,
+        phone: formData.phone,
+        ...(formData.role === "student" ? { studentId: formData.studentId } : {}),
+        ...(formData.role === "advisor" ? { employeeId: formData.employeeId } : {}),
+      };
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(body),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to sign up");
@@ -75,6 +99,32 @@ export default function SignUp() {
               <option value="advisor">อาจารย์</option>
             </select>
           </div>
+          {formData.role === "student" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">รหัสนักศึกษา</label>
+              <input
+                type="text"
+                name="studentId"
+                value={formData.studentId}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
+                placeholder="กรุณาใส่รหัสนักศึกษา"
+              />
+            </div>
+          )}
+          {formData.role === "advisor" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">รหัสอาจารย์</label>
+              <input
+                type="text"
+                name="employeeId"
+                value={formData.employeeId}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
+                placeholder="กรุณาใส่รหัสอาจารย์"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700">เบอร์โทรศัพท์</label>
             <input
@@ -106,6 +156,17 @@ export default function SignUp() {
               onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
               placeholder="กรุณาใส่รหัสผ่าน"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">ยืนยันรหัสผ่าน</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
+              placeholder="กรุณาใส่รหัสผ่านอีกครั้ง"
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
