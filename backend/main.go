@@ -48,6 +48,153 @@ func main() {
 		})
 	})
 
+	// API: Get all users
+	app.Get("/api/users", func(c *fiber.Ctx) error {
+		var users []models.User
+		if err := db.Find(&users).Error; err != nil {
+			log.Printf("Error fetching users: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch users"})
+		}
+
+		// Hide password hashes
+		for i := range users {
+			users[i].PasswordHash = ""
+		}
+
+		return c.JSON(fiber.Map{
+			"data":  users,
+			"count": len(users),
+		})
+	})
+
+	// API: Get user by ID
+	app.Get("/api/users/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		var user models.User
+
+		if err := db.Where("id = ?", id).First(&user).Error; err != nil {
+			log.Printf("User not found: %v", err)
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+		}
+
+		// Hide password hash
+		user.PasswordHash = ""
+
+		return c.JSON(fiber.Map{"data": user})
+	})
+
+	// API: Get users by role
+	app.Get("/api/users/role/:role", func(c *fiber.Ctx) error {
+		role := c.Params("role")
+		var users []models.User
+
+		if err := db.Where("role = ?", role).Find(&users).Error; err != nil {
+			log.Printf("Error fetching users by role: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch users"})
+		}
+
+		// Hide password hashes
+		for i := range users {
+			users[i].PasswordHash = ""
+		}
+
+		return c.JSON(fiber.Map{
+			"data":  users,
+			"count": len(users),
+			"role":  role,
+		})
+	})
+
+	// API: Get system settings
+	app.Get("/api/settings", func(c *fiber.Ctx) error {
+		var settings []map[string]interface{}
+
+		if err := db.Raw(`
+			SELECT setting_key, setting_value, description, created_at, updated_at 
+			FROM system_settings
+		`).Scan(&settings).Error; err != nil {
+			log.Printf("Error fetching settings: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch settings"})
+		}
+
+		return c.JSON(fiber.Map{
+			"data":  settings,
+			"count": len(settings),
+		})
+	})
+
+	// API: Get user profile (authenticated user info)
+	app.Get("/api/profile/:email", func(c *fiber.Ctx) error {
+		email := c.Params("email")
+		var user models.User
+
+		if err := db.Where("email = ?", email).First(&user).Error; err != nil {
+			log.Printf("Profile not found: %v", err)
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Profile not found"})
+		}
+
+		// Hide sensitive data
+		user.PasswordHash = ""
+		user.VerificationToken = ""
+		user.PasswordResetToken = ""
+
+		return c.JSON(fiber.Map{"data": user})
+	})
+
+	// API: Search users by name or email
+	app.Get("/api/users/search", func(c *fiber.Ctx) error {
+		query := c.Query("q")
+		if query == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Search query is required"})
+		}
+
+		var users []models.User
+		searchPattern := "%" + query + "%"
+
+		if err := db.Where("full_name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern).Find(&users).Error; err != nil {
+			log.Printf("Error searching users: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Search failed"})
+		}
+
+		// Hide password hashes
+		for i := range users {
+			users[i].PasswordHash = ""
+		}
+
+		return c.JSON(fiber.Map{
+			"data":  users,
+			"count": len(users),
+			"query": query,
+		})
+	})
+
+	// API: Get database stats
+	app.Get("/api/stats", func(c *fiber.Ctx) error {
+		var stats map[string]interface{}
+
+		// Count users by role
+		var userCounts []map[string]interface{}
+		if err := db.Raw(`
+			SELECT role, COUNT(*) as count 
+			FROM users 
+			GROUP BY role
+		`).Scan(&userCounts).Error; err != nil {
+			log.Printf("Error fetching user stats: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch stats"})
+		}
+
+		// Total users
+		var totalUsers int64
+		db.Model(&models.User{}).Count(&totalUsers)
+
+		stats = map[string]interface{}{
+			"total_users":   totalUsers,
+			"users_by_role": userCounts,
+		}
+
+		return c.JSON(fiber.Map{"data": stats})
+	})
+
 	// API Endpoint: Sign Up
 	app.Post("/api/signup", func(c *fiber.Ctx) error {
 		// Accept payload matching the frontend form
