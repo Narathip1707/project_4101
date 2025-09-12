@@ -21,18 +21,11 @@ export default function Home() {
   };
 
   useEffect(() => {
-    checkAuthStatus();
-
-    // ฟัง custom event สำหรับการ login/logout
-    const handleAuthChange = () => {
-      checkAuthStatus();
-    };
-
-    window.addEventListener("authChange", handleAuthChange);
-
-    return () => {
-      window.removeEventListener("authChange", handleAuthChange);
-    };
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true); //test
+      setUser({ fullName: "Test User" }); // เปลี่ยนเป็น API Call จริง
+    }
   }, []);
 
   if (isLoggedIn && user) {
