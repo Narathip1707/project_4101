@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthLayout, FormContainer, LinkText } from "@/components/LayoutComponents";
+import { InputField, SelectField, Button, ErrorMessage } from "@/components/FormComponents";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -48,75 +50,83 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-black ">ลงทะเบียน</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">ชื่อ-นามสกุล</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่ชื่อ-นามสกุล"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">สถานะ</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black"
-            >
-              <option value="student">นักศึกษา</option>
-              <option value="advisor">อาจารย์</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">เบอร์โทรศัพท์</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่เบอร์โทรศัพท์"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">อีเมล</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่รหัสผ่าน"
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
-          >
-            ลงทะเบียน
-          </button>
-        </form>
-      </div>
-    </div>
+    <AuthLayout title="📝 ลงทะเบียน">
+      <FormContainer onSubmit={handleSubmit}>
+        <InputField
+          label="ชื่อ-นามสกุล"
+          icon="👤"
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleChange}
+          placeholder="กรุณาใส่ชื่อ-นามสกุล"
+          required
+          animationDelay="animate-delay-100"
+        />
+        
+        <SelectField
+          label="สถานะ"
+          icon="🎓"
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          options={[
+            { value: "student", label: "นักศึกษา" },
+            { value: "advisor", label: "อาจารย์" }
+          ]}
+          animationDelay="animate-delay-200"
+        />
+        
+        <InputField
+          label="เบอร์โทรศัพท์"
+          icon="📱"
+          type="tel"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          placeholder="กรุณาใส่เบอร์โทรศัพท์"
+          animationDelay="animate-delay-300"
+        />
+        
+        <InputField
+          label="อีเมล"
+          icon="📧"
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
+          required
+          animationDelay="animate-delay-400"
+        />
+        
+        <InputField
+          label="รหัสผ่าน"
+          icon="🔒"
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="กรุณาใส่รหัสผ่าน"
+          required
+          animationDelay="animate-delay-500"
+        />
+        
+        <ErrorMessage message={error} />
+        
+        <Button
+          type="submit"
+          animationDelay="animate-delay-600"
+        >
+          ✅ ลงทะเบียน
+        </Button>
+      </FormContainer>
+      
+      <LinkText
+        text="มีบัญชีแล้ว?"
+        linkText="🔐 เข้าสู่ระบบที่นี่"
+        href="/login"
+        animationDelay="animate-delay-700"
+      />
+    </AuthLayout>
   );
 }
