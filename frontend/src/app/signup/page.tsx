@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { InputField, SelectField, Button, ErrorMessage } from "@/components/FormComponents";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -23,39 +24,26 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName) {
-      setError("Please enter your full name");
-      return;
-    }
-    if (!formData.email || !formData.password) {
-      setError("Email and password are required");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    if (formData.role === "student" && !formData.studentId) {
-      setError("กรุณาใส่รหัสนักศึกษา");
-      return;
-    }
-    if (formData.role === "advisor" && !formData.employeeId) {
-      setError("กรุณาใส่รหัสอาจารย์");
-      return;
-    }
+    // validations
+    if (!formData.fullName) return setError("กรุณาใส่ชื่อ-นามสกุล");
+    if (!formData.email) return setError("กรุณาใส่อีเมล");
+    if (!formData.password) return setError("กรุณาใส่รหัสผ่าน");
+    if (formData.password !== formData.confirmPassword) return setError("รหัสผ่านไม่ตรงกัน");
+    if (formData.role === "student" && !formData.studentId) return setError("กรุณาใส่รหัสนักศึกษา");
+    if (formData.role === "advisor" && !formData.employeeId) return setError("กรุณาใส่รหัสอาจารย์");
 
     try {
-      const url = `http://localhost:8080/api/signup`;
-      const body = {
+      const body: any = {
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
         role: formData.role,
         phone: formData.phone,
-        ...(formData.role === "student" ? { studentId: formData.studentId } : {}),
-        ...(formData.role === "advisor" ? { employeeId: formData.employeeId } : {}),
       };
-      const response = await fetch(url, {
+      if (formData.role === "student") body.studentId = formData.studentId;
+      if (formData.role === "advisor") body.employeeId = formData.employeeId;
+
+      const response = await fetch(`http://localhost:8080/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -66,116 +54,37 @@ export default function SignUp() {
       alert(data.message);
       router.push("/login");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-black ">ลงทะเบียน</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center text-black">ลงทะเบียน</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">ชื่อ-นามสกุล</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่ชื่อ-นามสกุล"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">สถานะ</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black"
-            >
-              <option value="student">นักศึกษา</option>
-              <option value="advisor">อาจารย์</option>
-            </select>
-          </div>
+          <InputField label="ชื่อ-นามสกุล" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="กรุณาใส่ชื่อ-นามสกุล" animationDelay="delay-75" />
+          <SelectField
+            label="สถานะ"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            options={[{ value: "student", label: "นักศึกษา" }, { value: "advisor", label: "อาจารย์" }]}
+            animationDelay="delay-100"
+          />
           {formData.role === "student" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">รหัสนักศึกษา</label>
-              <input
-                type="text"
-                name="studentId"
-                value={formData.studentId}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-                placeholder="กรุณาใส่รหัสนักศึกษา"
-              />
-            </div>
+            <InputField label="รหัสนักศึกษา" name="studentId" value={formData.studentId} onChange={handleChange} placeholder="กรุณาใส่รหัสนักศึกษา" animationDelay="delay-125" />
           )}
           {formData.role === "advisor" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">รหัสอาจารย์</label>
-              <input
-                type="text"
-                name="employeeId"
-                value={formData.employeeId}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-                placeholder="กรุณาใส่รหัสอาจารย์"
-              />
-            </div>
+            <InputField label="รหัสอาจารย์" name="employeeId" value={formData.employeeId} onChange={handleChange} placeholder="กรุณาใส่รหัสอาจารย์" animationDelay="delay-125" />
           )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">เบอร์โทรศัพท์</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่เบอร์โทรศัพท์"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">อีเมล</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่รหัสผ่าน"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">ยืนยันรหัสผ่าน</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black placeholder:text-black"
-              placeholder="กรุณาใส่รหัสผ่านอีกครั้ง"
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
-          >
-            ลงทะเบียน
-          </button>
+          <InputField label="เบอร์โทรศัพท์" name="phone" value={formData.phone} onChange={handleChange} placeholder="กรุณาใส่เบอร์โทรศัพท์" animationDelay="delay-150" />
+          <InputField label="อีเมล" type="email" name="email" value={formData.email} onChange={handleChange} placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th" animationDelay="delay-200" />
+          <InputField label="รหัสผ่าน" type="password" name="password" value={formData.password} onChange={handleChange} placeholder="กรุณาใส่รหัสผ่าน" animationDelay="delay-300" />
+          <InputField label="ยืนยันรหัสผ่าน" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="กรุณาใส่รหัสผ่านอีกครั้ง" animationDelay="delay-350" />
+
+          <ErrorMessage message={error} />
+          <Button type="submit" variant="primary" animationDelay="delay-500">ลงทะเบียน</Button>
         </form>
       </div>
     </div>
