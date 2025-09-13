@@ -160,6 +160,57 @@
   }
 }
 
+/* Starfall animation */
+@keyframes starFall {
+  0% {
+    transform: translate3d(var(--x), -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(calc(var(--x) + 10vw), 110vh, 0) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/* Container covering entire viewport; sits behind page content */
+.starfall {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0; /* content should be above with relative z-index > 0 */
+  overflow: hidden;
+}
+
+/* Each star uses CSS variables for customization */
+.star {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--size, 10px);
+  height: var(--size, 10px);
+  background: var(--color, #000);
+  border-radius: 50%;
+  box-shadow: 0 0 calc(var(--size, 2px) * 2) var(--glow, rgba(255, 215, 0, 0.35));
+  transform: translate3d(var(--x, 0), -10vh, 0);
+  animation: starFall var(--duration, 6s) linear var(--delay, 0s) infinite;
+}
+
+/* Trailing streak for a comet-like effect */
+.star::before {
+  content: "";
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: calc(var(--size, 2px) * 10);
+  height: calc(var(--size, 2px) / 2);
+  background: linear-gradient(90deg, transparent, var(--trail, rgba(0,0,0,0.35)));
+  filter: blur(0.5px);
+}
+
 /* Animation classes */
 .animate-fadeInUp {
   animation: fadeInUp 0.6s ease-out forwards;
