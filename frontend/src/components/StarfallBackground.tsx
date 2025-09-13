@@ -14,13 +14,13 @@ type StarConfig = {
 
 const genStar = (): StarConfig => {
   // Star size between 5-10px
-  const size = Math.floor(5 + Math.random() * 6); // 5-10px
+  const size = Math.floor(2 + Math.random() * 6); // 5-10px
   const duration = 4 + Math.random() * 6; // 4s - 10s
   const delay = Math.random() * 6; // 0s - 6s
   const x = `${Math.floor(Math.random() * 100)}vw`;
 
   // 70% black, 30% yellow-ish
-  const useYellow = Math.random() < 0.3;
+  const useYellow = Math.random() < 0.5;
   const color = useYellow ? "#FFD000" : "#000000";
   const glow = useYellow ? "rgba(255, 208, 0, 0.35)" : "rgba(0,0,0,0.25)";
   const trail = useYellow ? "rgba(255, 208, 0, 0.35)" : "rgba(0,0,0,0.35)";
