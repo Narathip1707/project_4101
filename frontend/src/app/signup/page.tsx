@@ -80,6 +80,9 @@ export default function SignUp() {
       if (data.role === "student") body.studentId = data.studentId;
       if (data.role === "advisor") body.employeeId = data.employeeId;
 
+      // Debug: แสดงข้อมูลที่ส่งไป backend
+      console.log("Signup request body:", body);
+
       const response = await fetch(`http://localhost:8080/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -27,11 +27,23 @@ export default function Home() {
     // ตรวจสอบสถานะ authentication เริ่มต้น
     checkAuthStatus();
 
+    // หากล็อกอินอยู่ ให้ redirect ตาม role
+    const authenticated = isAuthenticated();
+    if (authenticated) {
+      const userInfo = getUserInfo();
+      if (userInfo?.role === "student") {
+        window.location.href = "/student/dashboard";
+      } else if (userInfo?.role === "advisor") {
+        window.location.href = "/advisor/dashboard";
+      } else if (userInfo?.role === "admin") {
+        window.location.href = "/admin/dashboard";
+      }
+    }
+
     // ฟัง custom event สำหรับการ login/logout
     const handleAuthChange = () => {
       checkAuthStatus();
     };
-
     window.addEventListener("authChange", handleAuthChange);
 
     return () => {

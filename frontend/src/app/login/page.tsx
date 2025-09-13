@@ -35,17 +35,28 @@ export default function Login() {
       if (!response.ok) {
         setError("root", {
           type: "manual",
-          message: result.message || "เข้าสู่ระบบไม่สำเร็จ",
+          message: result?.message || "เข้าสู่ระบบไม่สำเร็จ",
         });
         return;
       }
-      
-      // เข้าสู่ระบบสำเร็จ
+
+      // เข้าสู่ระบบสำเร็จ: เก็บ token และข้อมูลผู้ใช้
       login(result.token, result.user);
-      router.push("/");
+
+      // Redirect ตาม role (fallback ไปหน้าแรก)
+      const role = result?.user?.role as string | undefined;
+      if (role === "student") {
+        router.push("/student/dashboard");
+      } else if (role === "advisor") {
+        router.push("/advisor/dashboard");
+      } else if (role === "admin") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/");
+      }
     } catch (error) {
       setError("root", {
-        type: "manual", 
+        type: "manual",
         message: "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์",
       });
     }
