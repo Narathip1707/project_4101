@@ -13,7 +13,8 @@ type StarConfig = {
 };
 
 const genStar = (): StarConfig => {
-  const size = Math.random() < 0.4 ? 3 : Math.random() < 0.6 ? 2 : 1; // 1-3px
+  // Star size between 5-10px
+  const size = Math.floor(5 + Math.random() * 6); // 5-10px
   const duration = 4 + Math.random() * 6; // 4s - 10s
   const delay = Math.random() * 6; // 0s - 6s
   const x = `${Math.floor(Math.random() * 100)}vw`;
