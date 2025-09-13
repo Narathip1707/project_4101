@@ -6,6 +6,7 @@ import Image from "next/image";
 import { isAuthenticated, getUserInfo } from "@/utils/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import StarfallBackground from "@/components/StarfallBackground";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -53,7 +54,11 @@ export default function Home() {
 
   if (isLoggedIn && user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 animate-fadeInUp">
+      <div className="relative min-h-screen bg-white animate-fadeInUp">
+        {/* starfall background */}
+        <StarfallBackground />
+        {/* content wrapper above stars */}
+        <div className="relative z-10">
         {/* Header with animation + university logo */}
         <Card className="m-6 border-0 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white animate-spin animate-delay-100 transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
           <CardHeader className="text-center">
@@ -159,14 +164,16 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
-
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 animate-accordion-down">
-      <Card className="w-full max-w-md animate-scaleIn transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
+    <div className="relative min-h-screen bg-white flex items-center justify-center p-4 animate-accordion-down">
+      {/* starfall background */}
+      <StarfallBackground />
+      <Card className="relative z-10 w-full max-w-md animate-scaleIn transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-3 mb-2 animate-scaleIn animate-delay-100">
             <Image
