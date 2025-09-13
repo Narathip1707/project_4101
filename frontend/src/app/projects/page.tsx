@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Project {
   id: string;
@@ -89,11 +92,11 @@ export default function Projects() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4 text-black">กรุณาเข้าสู่ระบบ</h1>
-          <p className="text-gray-600 mb-6">คุณต้องเข้าสู่ระบบเพื่อดูโครงงาน</p>
+        <div className="text-center animate-scaleIn">
+          <h1 className="text-3xl font-bold mb-4 text-black animate-fadeInUp animate-delay-200">กรุณาเข้าสู่ระบบ</h1>
+          <p className="text-gray-600 mb-6 animate-fadeInUp animate-delay-400">คุณต้องเข้าสู่ระบบเพื่อดูโครงงาน</p>
           <Link href="/login">
-            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 animate-fadeInUp animate-delay-600 hover:shadow-lg">
               เข้าสู่ระบบ
             </button>
           </Link>
@@ -105,28 +108,28 @@ export default function Projects() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-[rgba(13,33,57,255)] p-10">
-        <h1 className="text-3xl font-bold text-center mb-2 text-white">โครงงานของฉัน</h1>
-        <p className="text-center text-white">จัดการและติดตามโครงงานพิเศษของคุณ</p>
+      <div className="bg-[rgba(13,33,57,255)] p-10 animate-slideInFromTop">
+        <h1 className="text-3xl font-bold text-center mb-2 text-white animate-fadeInUp animate-delay-200">โครงงานของฉัน</h1>
+        <p className="text-center text-white animate-fadeInUp animate-delay-400">จัดการและติดตามโครงงานพิเศษของคุณ</p>
       </div>
 
       <div className="max-w-6xl mx-auto p-6">
         {/* Action Bar */}
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6 animate-fadeInUp animate-delay-600 hover:shadow-xl transition-all duration-300">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 animate-fadeInLeft animate-delay-700">
               <h2 className="text-xl font-bold text-black">รายการโครงงาน</h2>
-              <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+              <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-300 transition-colors">
                 ทั้งหมด {projects.length} โครงงาน
               </span>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 animate-fadeInRight animate-delay-800">
               {/* Filter */}
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black shadow-sm"
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black shadow-sm hover:shadow-md transition-shadow"
               >
                 <option value="all">ทั้งหมด</option>
                 <option value="draft">ร่าง</option>
@@ -138,7 +141,7 @@ export default function Projects() {
               
               {/* New Project Button */}
               <Link href="/projects/new">
-                <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 hover:scale-105 transition-all duration-200 hover:shadow-lg">
                   + สร้างโครงงานใหม่
                 </button>
               </Link>
@@ -148,27 +151,27 @@ export default function Projects() {
 
         {/* Projects Grid */}
         {filteredProjects.length === 0 ? (
-          <div className="bg-white shadow-lg rounded-lg p-12 text-center">
-            <div className="text-6xl mb-4">📚</div>
-            <h3 className="text-xl font-semibold text-black mb-2">ไม่มีโครงงาน</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-white shadow-lg rounded-lg p-12 text-center animate-scaleIn animate-delay-900 hover:shadow-xl transition-shadow">
+            <div className="text-6xl mb-4 animate-bounce animate-delay-1000">📚</div>
+            <h3 className="text-xl font-semibold text-black mb-2 animate-fadeInUp animate-delay-1100">ไม่มีโครงงาน</h3>
+            <p className="text-gray-600 mb-6 animate-fadeInUp animate-delay-1200">
               {filter === "all" 
                 ? "คุณยังไม่มีโครงงานเลย เริ่มสร้างโครงงานแรกของคุณกันเลย!" 
                 : `ไม่มีโครงงานที่มีสถานะ "${getStatusText(filter as Project["status"])}"`}
             </p>
             <Link href="/projects/new">
-              <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+              <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 animate-fadeInUp animate-delay-1300 hover:shadow-lg">
                 สร้างโครงงานใหม่
               </button>
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredProjects.map((project) => (
-              <div key={project.id} className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow">
+            {filteredProjects.map((project, index) => (
+              <div key={project.id} className={`bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 animate-fadeInUp animate-delay-${900 + index * 100}`}>
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-black mb-2 flex-1">{project.title}</h3>
-                  <span className={`${getStatusColor(project.status)} text-white px-3 py-1 rounded-full text-sm ml-4`}>
+                  <h3 className="text-xl font-bold text-black mb-2 flex-1 hover:text-blue-600 transition-colors">{project.title}</h3>
+                  <span className={`${getStatusColor(project.status)} text-white px-3 py-1 rounded-full text-sm ml-4 hover:scale-110 transition-transform`}>
                     {getStatusText(project.status)}
                   </span>
                 </div>
@@ -196,12 +199,12 @@ export default function Projects() {
                 
                 <div className="flex gap-2">
                   <Link href={`/projects/${project.id}`} className="flex-1">
-                    <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+                    <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200">
                       ดูรายละเอียด
                     </button>
                   </Link>
                   <Link href={`/projects/${project.id}/edit`}>
-                    <button className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
+                    <button className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 hover:scale-105 transition-all duration-200">
                       แก้ไข
                     </button>
                   </Link>
@@ -212,9 +215,9 @@ export default function Projects() {
         )}
 
         {/* Back to Home */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 animate-fadeInUp animate-delay-1400">
           <Link href="/">
-            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 hover:shadow-lg">
               กลับสู่หน้าหลัก
             </button>
           </Link>

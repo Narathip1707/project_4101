@@ -1,92 +1,310 @@
 "use client";
 
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { InputField, SelectField, Button, ErrorMessage } from "@/components/FormComponents";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+
+// Zod schema สำหรับ validation
+const signupSchema = z.object({
+  fullName: z.string().min(1, "กรุณากรอกชื่อ-นามสกุล"),
+  role: z.enum(["student", "advisor"]),
+  studentId: z.string().optional(),
+  employeeId: z.string().optional(),
+  phone: z.string().min(1, "กรุณากรอกเบอร์โทรศัพท์"),
+  email: z
+    .string()
+    .min(1, "กรุณากรอกอีเมล")
+    .email("รูปแบบอีเมลไม่ถูกต้อง")
+    .refine((email) => email.endsWith("@rumail.ru.ac.th"), {
+      message: "อีเมลต้องเป็นของมหาวิทยาลัยรามคำแหง (@rumail.ru.ac.th)",
+    }),
+  password: z
+    .string()
+    .min(1, "กรุณากรอกรหัสผ่าน")
+    .min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+  confirmPassword: z.string().min(1, "กรุณายืนยันรหัสผ่าน"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "รหัสผ่านไม่ตรงกัน",
+  path: ["confirmPassword"],
+}).refine((data) => {
+  if (data.role === "student" && !data.studentId) {
+    return false;
+  }
+  if (data.role === "advisor" && !data.employeeId) {
+    return false;
+  }
+  return true;
+}, {
+  message: "กรุณากรอกรหัสนักศึกษาหรือรหัสอาจารย์",
+  path: ["studentId"],
+});
+
+type SignupFormData = z.infer<typeof signupSchema>;
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    fullName: "",
-    role: "student",
-    phone: "",
-    studentId: "",
-    employeeId: "",
-  });
-  const [error, setError] = useState("");
   const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+    watch,
+    setValue,
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      role: "student",
+    },
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: (e.target as HTMLInputElement).value });
-  };
+  const role = watch("role");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // validations
-    if (!formData.fullName) return setError("กรุณาใส่ชื่อ-นามสกุล");
-    if (!formData.email) return setError("กรุณาใส่อีเมล");
-    if (!formData.password) return setError("กรุณาใส่รหัสผ่าน");
-    if (formData.password !== formData.confirmPassword) return setError("รหัสผ่านไม่ตรงกัน");
-    if (formData.role === "student" && !formData.studentId) return setError("กรุณาใส่รหัสนักศึกษา");
-    if (formData.role === "advisor" && !formData.employeeId) return setError("กรุณาใส่รหัสอาจารย์");
-
+  const onSubmit = async (data: SignupFormData) => {
     try {
       const body: any = {
-        email: formData.email,
-        password: formData.password,
-        fullName: formData.fullName,
-        role: formData.role,
-        phone: formData.phone,
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        role: data.role,
+        phone: data.phone,
       };
-      if (formData.role === "student") body.studentId = formData.studentId;
-      if (formData.role === "advisor") body.employeeId = formData.employeeId;
+      
+      if (data.role === "student") body.studentId = data.studentId;
+      if (data.role === "advisor") body.employeeId = data.employeeId;
 
       const response = await fetch(`http://localhost:8080/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to sign up");
-      setError("");
-      alert(data.message);
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to sign up");
+      }
+      
+      alert(result.message);
       router.push("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");
+      const errorMessage = err instanceof Error ? err.message : "เกิดข้อผิดพลาด";
+      setError("root", { message: errorMessage });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-black">ลงทะเบียน</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <InputField label="ชื่อ-นามสกุล" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="กรุณาใส่ชื่อ-นามสกุล" animationDelay="delay-75" />
-          <SelectField
-            label="สถานะ"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            options={[{ value: "student", label: "นักศึกษา" }, { value: "advisor", label: "อาจารย์" }]}
-            animationDelay="delay-100"
-          />
-          {formData.role === "student" && (
-            <InputField label="รหัสนักศึกษา" name="studentId" value={formData.studentId} onChange={handleChange} placeholder="กรุณาใส่รหัสนักศึกษา" animationDelay="delay-125" />
-          )}
-          {formData.role === "advisor" && (
-            <InputField label="รหัสอาจารย์" name="employeeId" value={formData.employeeId} onChange={handleChange} placeholder="กรุณาใส่รหัสอาจารย์" animationDelay="delay-125" />
-          )}
-          <InputField label="เบอร์โทรศัพท์" name="phone" value={formData.phone} onChange={handleChange} placeholder="กรุณาใส่เบอร์โทรศัพท์" animationDelay="delay-150" />
-          <InputField label="อีเมล" type="email" name="email" value={formData.email} onChange={handleChange} placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th" animationDelay="delay-200" />
-          <InputField label="รหัสผ่าน" type="password" name="password" value={formData.password} onChange={handleChange} placeholder="กรุณาใส่รหัสผ่าน" animationDelay="delay-300" />
-          <InputField label="ยืนยันรหัสผ่าน" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="กรุณาใส่รหัสผ่านอีกครั้ง" animationDelay="delay-350" />
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4 animate-fadeInUp">
+      <Card className="w-full max-w-md animate-scaleIn transform transition-all duration-500 hover:scale-105 hover:shadow-2xl">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-3xl font-bold text-center animate-fadeInDown animate-delay-200">
+            📝 ลงทะเบียน
+          </CardTitle>
+          <CardDescription className="text-center animate-fadeInUp animate-delay-300">
+            สร้างบัญชีใหม่เพื่อเข้าใช้งานระบบ
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="animate-fadeInUp animate-delay-400">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Full Name with animation */}
+            <div className="space-y-2 animate-fadeInLeft animate-delay-500 transform transition-all duration-300 hover:scale-105">
+              <Label htmlFor="fullName" className="font-medium">👤 ชื่อ-นามสกุล</Label>
+              <Input
+                id="fullName"
+                placeholder="กรุณาใส่ชื่อ-นามสกุล"
+                {...register("fullName")}
+                className={cn(
+                  "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                  errors.fullName && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                )}
+              />
+              {errors.fullName && (
+                <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.fullName.message}</p>
+              )}
+            </div>
 
-          <ErrorMessage message={error} />
-          <Button type="submit" variant="primary" animationDelay="delay-500">ลงทะเบียน</Button>
-        </form>
-      </div>
+            {/* Role with animation */}
+            <div className="space-y-2 animate-fadeInRight animate-delay-600 transform transition-all duration-300 hover:scale-105">
+              <Label htmlFor="role" className="font-medium">📋 สถานะ</Label>
+              <Select 
+                onValueChange={(value) => setValue("role", value as "student" | "advisor")}
+                defaultValue="student"
+              >
+                <SelectTrigger className={cn(
+                  "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                  errors.role && "border-red-500 focus:ring-red-500 animate-pulse"
+                )}>
+                  <SelectValue placeholder="เลือกสถานะ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">🎓 นักศึกษา</SelectItem>
+                  <SelectItem value="advisor">👨‍🏫 อาจารย์</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.role && (
+                <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.role.message}</p>
+              )}
+            </div>
+
+            {/* Student ID / Employee ID with conditional animations */}
+            {role === "student" && (
+              <div className="space-y-2 animate-fadeInLeft animate-delay-700 transform transition-all duration-300 hover:scale-105">
+                <Label htmlFor="studentId" className="font-medium">🆔 รหัสนักศึกษา</Label>
+                <Input
+                  id="studentId"
+                  placeholder="กรุณาใส่รหัสนักศึกษา"
+                  {...register("studentId")}
+                  className={cn(
+                    "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                    errors.studentId && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                  )}
+                />
+                {errors.studentId && (
+                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.studentId.message}</p>
+                )}
+              </div>
+            )}
+
+            {role === "advisor" && (
+              <div className="space-y-2 animate-fadeInRight animate-delay-700 transform transition-all duration-300 hover:scale-105">
+                <Label htmlFor="employeeId" className="font-medium">🆔 รหัสอาจารย์</Label>
+                <Input
+                  id="employeeId"
+                  placeholder="กรุณาใส่รหัสอาจารย์"
+                  {...register("employeeId")}
+                  className={cn(
+                    "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                    errors.employeeId && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                  )}
+                />
+                {errors.employeeId && (
+                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.employeeId.message}</p>
+                )}
+              </div>
+            )}
+
+            {/* Phone with animation */}
+            <div className="space-y-2 animate-fadeInLeft animate-delay-800 transform transition-all duration-300 hover:scale-105">
+              <Label htmlFor="phone" className="font-medium">📱 เบอร์โทรศัพท์</Label>
+              <Input
+                id="phone"
+                placeholder="กรุณาใส่เบอร์โทรศัพท์"
+                {...register("phone")}
+                className={cn(
+                  "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                  errors.phone && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                )}
+              />
+              {errors.phone && (
+                <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.phone.message}</p>
+              )}
+            </div>
+
+            {/* Email with animation */}
+            <div className="space-y-2 animate-fadeInRight animate-delay-900 transform transition-all duration-300 hover:scale-105">
+              <Label htmlFor="email" className="font-medium">📧 อีเมล</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
+                {...register("email")}
+                className={cn(
+                  "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                  errors.email && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                )}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Password with animation */}
+            <div className="space-y-2 animate-fadeInLeft animate-delay-1000 transform transition-all duration-300 hover:scale-105">
+              <Label htmlFor="password" className="font-medium">🔒 รหัสผ่าน</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="กรุณาใส่รหัสผ่าน"
+                {...register("password")}
+                className={cn(
+                  "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                  errors.password && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                )}
+              />
+              {errors.password && (
+                <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.password.message}</p>
+              )}
+            </div>
+
+            {/* Confirm Password with animation */}
+            <div className="space-y-2 animate-fadeInRight animate-delay-1100 transform transition-all duration-300 hover:scale-105">
+              <Label htmlFor="confirmPassword" className="font-medium">🔒 ยืนยันรหัสผ่าน</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="กรุณาใส่รหัสผ่านอีกครั้ง"
+                {...register("confirmPassword")}
+                className={cn(
+                  "transition-all duration-300 transform hover:scale-105 focus:scale-105 hover:shadow-md focus:shadow-lg",
+                  errors.confirmPassword && "border-red-500 focus-visible:ring-red-500 animate-pulse"
+                )}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            {/* Root Error with animation */}
+            {errors.root && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 animate-fadeInUp animate-delay-300">
+                <p className="text-sm text-red-600 animate-pulse">❌ {errors.root.message}</p>
+              </div>
+            )}
+
+            {/* Submit Button with enhanced animations */}
+            <Button 
+              type="submit" 
+              className="w-full animate-slideInFromBottom animate-delay-1200 transition-all duration-300 transform hover:scale-105 hover:shadow-xl" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span className="animate-pulse">กำลังลงทะเบียน...</span>
+                </div>
+              ) : (
+                <span className="flex items-center justify-center space-x-2">
+                  <span className="animate-bounce">✅</span>
+                  <span>ลงทะเบียน</span>
+                </span>
+              )}
+            </Button>
+          </form>
+
+          {/* Login Link with animation */}
+          <div className="mt-6 text-center animate-fadeInUp animate-delay-1300">
+            <p className="text-sm text-gray-600">
+              มีบัญชีอยู่แล้ว?{" "}
+              <Link 
+                href="/login" 
+                className="text-green-600 hover:text-green-800 font-medium hover:underline transition-all duration-300 transform hover:scale-110 inline-block"
+              >
+                <span className="flex items-center space-x-1">
+                  <span className="animate-pulse">🔐</span>
+                  <span>เข้าสู่ระบบที่นี่</span>
+                </span>
+              </Link>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
