@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Notification {
   id: string;
@@ -164,11 +166,11 @@ export default function Notifications() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4 text-black">กรุณาเข้าสู่ระบบ</h1>
-          <p className="text-gray-600 mb-6">คุณต้องเข้าสู่ระบบเพื่อดูการแจ้งเตือน</p>
+        <div className="text-center animate-scaleIn">
+          <h1 className="text-3xl font-bold mb-4 text-black animate-fadeInUp animate-delay-200">กรุณาเข้าสู่ระบบ</h1>
+          <p className="text-gray-600 mb-6 animate-fadeInUp animate-delay-400">คุณต้องเข้าสู่ระบบเพื่อดูการแจ้งเตือน</p>
           <Link href="/login">
-            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 animate-fadeInUp animate-delay-600 hover:shadow-lg">
               เข้าสู่ระบบ
             </button>
           </Link>
@@ -180,35 +182,35 @@ export default function Notifications() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-[rgba(13,33,57,255)] p-10">
-        <h1 className="text-3xl font-bold text-center mb-2 text-white">การแจ้งเตือน</h1>
-        <p className="text-center text-white">ติดตามข่าวสารและการแจ้งเตือนสำคัญ</p>
+      <div className="bg-[rgba(13,33,57,255)] p-10 animate-slideInFromTop">
+        <h1 className="text-3xl font-bold text-center mb-2 text-white animate-fadeInUp animate-delay-200">การแจ้งเตือน</h1>
+        <p className="text-center text-white animate-fadeInUp animate-delay-400">ติดตามข่าวสารและการแจ้งเตือนสำคัญ</p>
       </div>
 
       <div className="max-w-4xl mx-auto p-6">
         {/* Action Bar */}
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6 animate-fadeInUp animate-delay-600 hover:shadow-xl transition-shadow">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 animate-fadeInLeft animate-delay-700">
               <h2 className="text-xl font-bold text-black">รายการแจ้งเตือน</h2>
               <div className="flex items-center gap-2">
-                <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+                <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-300 transition-colors">
                   ทั้งหมด {notifications.length}
                 </span>
                 {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm animate-pulse">
                     ยังไม่อ่าน {unreadCount}
                   </span>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 animate-fadeInRight animate-delay-800">
               {/* Filter */}
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:shadow-md transition-shadow"
               >
                 <option value="all">ทั้งหมด</option>
                 <option value="unread">ยังไม่อ่าน</option>
@@ -222,7 +224,7 @@ export default function Notifications() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 hover:scale-105 transition-all duration-200 hover:shadow-lg"
                 >
                   อ่านทั้งหมด
                 </button>
@@ -233,10 +235,10 @@ export default function Notifications() {
 
         {/* Notifications List */}
         {filteredNotifications.length === 0 ? (
-          <div className="bg-white shadow-lg rounded-lg p-12 text-center">
-            <div className="text-6xl mb-4">🔔</div>
-            <h3 className="text-xl font-semibold text-black mb-2">ไม่มีการแจ้งเตือน</h3>
-            <p className="text-gray-600">
+          <div className="bg-white shadow-lg rounded-lg p-12 text-center animate-scaleIn animate-delay-900 hover:shadow-xl transition-shadow">
+            <div className="text-6xl mb-4 animate-bounce animate-delay-1000">🔔</div>
+            <h3 className="text-xl font-semibold text-black mb-2 animate-fadeInUp animate-delay-1100">ไม่มีการแจ้งเตือน</h3>
+            <p className="text-gray-600 animate-fadeInUp animate-delay-1200">
               {filter === "all" 
                 ? "คุณไม่มีการแจ้งเตือนในขณะนี้" 
                 : `ไม่มีการแจ้งเตือนประเภท "${filter === "unread" ? "ยังไม่อ่าน" : getTypeText(filter as Notification["type"])}"`}
@@ -244,22 +246,22 @@ export default function Notifications() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredNotifications.map((notification) => (
+            {filteredNotifications.map((notification, index) => (
               <div
                 key={notification.id}
                 className={`bg-white shadow-lg rounded-lg p-6 border-l-4 ${getTypeColor(notification.type)} ${
                   !notification.isRead ? "border-l-8" : ""
-                }`}
+                } hover:shadow-xl transition-all duration-300 hover:scale-105 animate-fadeInUp animate-delay-${900 + index * 100}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-2xl">{getTypeIcon(notification.type)}</span>
-                      <h3 className={`text-lg font-semibold ${!notification.isRead ? "text-black" : "text-gray-700"}`}>
+                      <span className="text-2xl hover:scale-110 transition-transform animate-pulse animate-delay-${1000 + index * 100}">{getTypeIcon(notification.type)}</span>
+                      <h3 className={`text-lg font-semibold ${!notification.isRead ? "text-black" : "text-gray-700"} hover:text-blue-600 transition-colors`}>
                         {notification.title}
                       </h3>
                       {!notification.isRead && (
-                        <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                        <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
                           ใหม่
                         </span>
                       )}
@@ -281,7 +283,7 @@ export default function Notifications() {
                           })}
                         </span>
                         {notification.relatedTo && (
-                          <span className="text-blue-600">
+                          <span className="text-blue-600 hover:text-blue-800 transition-colors">
                             {notification.relatedTo.name}
                           </span>
                         )}
@@ -290,7 +292,7 @@ export default function Notifications() {
                       <div className="flex items-center gap-2">
                         {notification.relatedTo?.type === "project" && notification.relatedTo.id && (
                           <Link href={`/projects/${notification.relatedTo.id}`}>
-                            <button className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                            <button className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 hover:scale-105 transition-all duration-200">
                               ดูโครงงาน
                             </button>
                           </Link>
@@ -298,7 +300,7 @@ export default function Notifications() {
                         {!notification.isRead && (
                           <button
                             onClick={() => markAsRead(notification.id)}
-                            className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600"
+                            className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 hover:scale-105 transition-all duration-200"
                           >
                             ทำเครื่องหมายว่าอ่านแล้ว
                           </button>
@@ -313,9 +315,9 @@ export default function Notifications() {
         )}
 
         {/* Back to Home */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 animate-fadeInUp animate-delay-1400">
           <Link href="/">
-            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 hover:shadow-lg">
               กลับสู่หน้าหลัก
             </button>
           </Link>

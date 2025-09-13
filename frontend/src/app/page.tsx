@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { isAuthenticated, getUserInfo } from "@/utils/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -21,9 +24,10 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // ตรวจสอบสถานะ authentication เริ่มต้น
     checkAuthStatus();
-    
-    // Redirect logged-in users to their dashboard
+
+    // หากล็อกอินอยู่ ให้ redirect ตาม role
     const authenticated = isAuthenticated();
     if (authenticated) {
       const userInfo = getUserInfo();
@@ -35,30 +39,42 @@ export default function Home() {
         window.location.href = "/admin/dashboard";
       }
     }
+
+    // ฟัง custom event สำหรับการ login/logout
+    const handleAuthChange = () => {
+      checkAuthStatus();
+    };
+    window.addEventListener("authChange", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("authChange", handleAuthChange);
+    };
   }, []);
 
   if (isLoggedIn && user) {
     return (
-      <div className="min-h-screen bg-gray-100">
-        {/* Header with animation */}
-        <div className="bg-[rgba(13,33,57,255)] p-10 animate-fadeInDown">
-          <h1 className="text-3xl font-bold text-center mb-4 text-white animate-fadeInUp animate-delay-200">
-            ยินดีต้อนรับ, {user.fullName}!
-          </h1>
-          <p className="text-center mb-4 text-white animate-fadeInUp animate-delay-300">
-            หน้าโฮมของระบบจัดการโครงงานพิเศษ
-          </p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 animate-fadeInUp">
+        {/* Header with animation + university logo */}
+        <Card className="m-6 border-0 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white animate-spin animate-delay-100 transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold animate-scaleIn animate-delay-200">
+              ยินดีต้อนรับ, {user.fullName}! 👋
+            </CardTitle>
+            <CardDescription className="text-blue-100 text-lg animate-fadeInUp animate-delay-300">
+              หน้าโฮมของระบบจัดการโครงงานพิเศษ
+            </CardDescription>
+          </CardHeader>
+        </Card>
         
-        {/* Title section with animation */}
-        <div className="mt-10 text-center animate-fadeInUp animate-delay-400">
-          <h1 className="text-4xl font-semibold inline-block pb-2 text-black border-b-4 border-blue-500 hover-scale">
-            ตัวอย่างโครงงานพิเศษ
+        {/* Title section */}
+        <div className="text-center mb-8 animate-fadeInUp animate-delay-400">
+          <h1 className="text-4xl font-semibold text-gray-800 border-b-4 border-blue-500 inline-block pb-2 transform transition-all duration-300 hover:scale-101">
+            🎓 ตัวอย่างโครงงานพิเศษ
           </h1>
         </div>
 
-        {/* Project cards with staggered animation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-6 text-black">
+        {/* Project cards with staggered animations */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mx-6 mb-8">
           {[
             { 
               id: "1",
@@ -82,21 +98,27 @@ export default function Home() {
               advisor: "อ.ดร.ปัญญา เจ้าปัญญา"
             },
           ].map((project, idx) => (
-            <div 
+            <Card 
               key={idx} 
-              className={`m-2 bg-white shadow-lg p-6 flex flex-col justify-between rounded-lg hover-lift animate-fadeInUp animate-delay-${(idx + 5) * 100} opacity-0`}
+              className={`hover:shadow-xl transition-all duration-500 hover:scale-110 transform animate-fadeInUp animate-delay-${(idx + 5) * 100} hover-lift`}
             >
-              <div>
-                <h2 className="text-xl font-bold mb-2 text-blue-800">{project.title}</h2>
-                <p className="text-gray-600 mb-3">{project.desc}</p>
-                <div className="mb-3">
-                  <p className="text-sm text-gray-500 mb-1">
+              <CardHeader className="animate-fadeInDown animate-delay-600">
+                <CardTitle className="text-xl text-blue-800 transition-colors duration-300 hover:text-blue-600">
+                  {project.title}
+                </CardTitle>
+                <CardDescription className="animate-fadeInUp animate-delay-700">
+                  {project.desc}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="animate-fadeInUp animate-delay-800">
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm text-gray-600 transform transition-all duration-300 hover:text-gray-800">
                     <span className="font-medium">อาจารย์ที่ปรึกษา:</span> {project.advisor}
                   </p>
                   <p className="text-sm">
                     <span className="font-medium">สถานะ:</span> 
-                    <span className={`ml-2 px-2 py-1 rounded text-xs transition-all duration-300 ${
-                      project.status === "อนุมัติแล้ว" ? "bg-green-100 text-green-800 animate-pulse-custom" :
+                    <span className={`ml-2 px-2 py-1 rounded text-xs transition-all duration-300 transform hover:scale-110 ${
+                      project.status === "อนุมัติแล้ว" ? "bg-green-100 text-green-800 animate-pulse" :
                       project.status === "กำลังดำเนินการ" ? "bg-blue-100 text-blue-800" :
                       "bg-gray-100 text-gray-800"
                     }`}>
@@ -104,67 +126,84 @@ export default function Home() {
                     </span>
                   </p>
                 </div>
-              </div>
-              <Link href={`/projects/${project.id}`}>
-                <button className="mt-auto bg-blue-500 text-white text-sm px-3 py-2 hover:bg-blue-600 w-full rounded transition-all duration-300 hover:shadow-lg transform hover:scale-105">
-                  ดูรายละเอียด
-                </button>
-              </Link>
-            </div>
+                <Link href={`/projects/${project.id}`}>
+                  <Button className="w-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg animate-fadeInUp animate-delay-900">
+                    📋 ดูรายละเอียด
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           ))}
         </div>
         
-        {/* Divider with animation */}
-        <div className="border-t-2 border-gray-300 m-10 animate-fadeInUp animate-delay-800"></div>
-        
-        {/* Action buttons with animation */}
-        <div className="flex justify-center gap-4 max-w-4xl mx-auto p-6 animate-slideInFromBottom animate-delay-900">
-          <Link
-            href="/projects"
-            className="bg-blue-500 text-white p-4 hover:bg-blue-600 text-center flex-1 rounded-lg transition-all duration-300 hover-lift glow"
-          >
-            📚 ดูโครงงาน
-          </Link>
-          <Link
-            href="/profile"
-            className="bg-green-500 text-white p-4 hover:bg-green-600 text-center flex-1 rounded-lg transition-all duration-300 hover-lift glow"
-          >
-            👤 จัดการโปรไฟล์
-          </Link>
-          <Link
-            href="/notifications"
-            className="bg-yellow-500 text-white p-4 hover:bg-yellow-600 text-center flex-1 rounded-lg transition-all duration-300 hover-lift glow"
-          >
-            🔔 ดูการแจ้งเตือน
-          </Link>
-        </div>
+        {/* Action buttons with enhanced animations */}
+        <Card className="mx-6 mb-6 animate-slideInFromBottom animate-delay-1000 transform transition-all duration-500 hover:shadow-xl hover:scale-101">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 place-items-center">
+              <Link href="/projects">
+                <Button className="w-64 h-16 text-lg rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/60 animate-fadeInLeft animate-delay-1100 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+                  <span className="flex items-center justify-center space-x-2">
+                    <span className="animate-bounce">📚</span>
+                    <span>ดูโครงงาน</span>
+                  </span>
+                </Button>
+              </Link>
+              <Link href="/notifications">
+                <Button className="w-64 h-16 text-lg rounded-xl bg-white-600 hover:bg-fuchsia-500 text-black border border-fuchsia-500/30 animate-fadeInRight animate-delay-1300 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+                  <span className="flex items-center justify-center space-x-2">
+                    <span className="animate-bounce">🔔</span>
+                    <span>ดูการแจ้งเตือน</span>
+                  </span>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center text-black animate-fadeInUp">
-        <h1 className="text-3xl font-bold mb-4 animate-fadeInDown">
-          ระบบจัดการโครงงานพิเศษ
-        </h1>
-        <p className="text-2xl mb-4 animate-fadeInUp animate-delay-200">
-          กรุณาเข้าสู่ระบบหรือลงทะเบียนเพื่อเริ่มต้น
-        </p>
-        <div className="flex justify-center space-x-4 animate-fadeInUp animate-delay-400">
-          <Link href="/login" className="text-blue-500 hover:underline">
-            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all duration-300 hover-lift glow">
-              🔐 เข้าสู่ระบบ
-            </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 animate-accordion-down">
+      <Card className="w-full max-w-md animate-scaleIn transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-2 animate-scaleIn animate-delay-100">
+            <Image
+              src="/ramkhamhaeng-logo.svg"
+              alt="Ramkhamhaeng University Logo"
+              width={44}
+              height={44}
+              className="h-50 w-50"
+              priority
+            />
+          </div>
+          <CardTitle className="text-3xl font-bold mb-4 animate-fadeInDown animate-delay-200">
+            🎓 ระบบจัดการโครงงานพิเศษ
+          </CardTitle>
+          <CardDescription className="text-lg animate-fadeInUp animate-delay-300">
+            กรุณาเข้าสู่ระบบหรือลงทะเบียนเพื่อเริ่มต้น
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 animate-fadeInUp animate-delay-400">
+          <Link href="/login">
+            <Button className="w-full mb-1 h-12 text-lg bg-gradient-to-r from-blue-600 to-yellow-500 hover:from-blue-700 hover:to-yellow-600 text-white animate-fadeInLeft animate-delay-500 transition-all duration-300 transform hover:scale-110 hover:shadow-xl border-0">
+              <span className="flex items-center justify-center space-x-2">
+                <span className="animate-pulse">🔐</span>
+                <span>เข้าสู่ระบบ</span>
+              </span>
+            </Button>
           </Link>
-          <Link href="/signup" className="text-blue-500 hover:underline ml-4">
-            <button className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all duration-300 hover-lift glow">
-              📝 ลงทะเบียน
-            </button>
+          <Link href="/signup">
+            <Button className="w-full h-12 text-lg bg-gradient-to-r from-yellow-500 to-blue-600 hover:from-yellow-600 hover:to-blue-700 text-white animate-fadeInRight animate-delay-600 transition-all duration-300 transform hover:scale-110 hover:shadow-xl border-0">
+              <span className="flex items-center justify-center space-x-2">
+                <span className="animate-bounce">📝</span>
+                <span>ลงทะเบียน</span>
+              </span>
+            </Button>
           </Link>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

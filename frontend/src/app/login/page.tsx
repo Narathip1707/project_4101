@@ -1,112 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { login } from "@/utils/auth";
-import { AuthLayout, FormContainer, LinkText } from "@/components/LayoutComponents";
-import { InputField, Button, ErrorMessage } from "@/components/FormComponents";
+import { loginSchema, LoginFormData } from "@/utils/validationSchemas";
+import AnimatedFormContainer from "@/components/forms/AnimatedFormContainer";
+import EmailInput from "@/components/forms/EmailInput";
+import PasswordInput from "@/components/forms/PasswordInput";
+import SubmitButton from "@/components/forms/SubmitButton";
+import Link from "next/link";
 
 export default function Login() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
   const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.email || !formData.password) {
-      setError("Email and password are required");
-      return;
-    }
-
+  const onSubmit = async (data: LoginFormData) => {
     try {
       const url = `http://localhost:8080/api/login`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to login");
-      setError("");
+      const result = await response.json();
       
-      // Debug: แสดงข้อมูลที่ได้จาก backend
-      console.log("Login response data:", data);
-      
-      // ตรวจสอบว่า backend ส่งข้อมูล user มาหรือไม่
-      if (!data.user) {
-        throw new Error("No user data received from backend");
+      if (!response.ok) {
+        setError("root", {
+          type: "manual",
+          message: result?.message || "เข้าสู่ระบบไม่สำเร็จ",
+        });
+        return;
       }
-      
-      // บันทึกข้อมูล login และ redirect ตาม role (ใช้ข้อมูลจาก backend เท่านั้น)
-      const userData = data.user;
-      console.log("User data for login:", userData);
-      
-      login("dummy-token", userData);
-      
-      // Redirect ตาม role
-      console.log("Redirecting based on role:", userData.role);
-      if (userData.role === "student") {
+
+      // เข้าสู่ระบบสำเร็จ: เก็บ token และข้อมูลผู้ใช้
+      login(result.token, result.user);
+
+      // Redirect ตาม role (fallback ไปหน้าแรก)
+      const role = result?.user?.role as string | undefined;
+      if (role === "student") {
         router.push("/student/dashboard");
-      } else if (userData.role === "advisor") {
+      } else if (role === "advisor") {
         router.push("/advisor/dashboard");
-      } else if (userData.role === "admin") {
+      } else if (role === "admin") {
         router.push("/admin/dashboard");
       } else {
         router.push("/");
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-      setError(errorMessage);
+    } catch (error) {
+      setError("root", {
+        type: "manual",
+        message: "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์",
+      });
     }
   };
 
   return (
-    <AuthLayout title="🔐 เข้าสู่ระบบ">
-      <FormContainer onSubmit={handleSubmit}>
-        <InputField
-          label="อีเมล"
-          icon="📧"
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="กรุณาใส่อีเมล @rumail.ru.ac.th"
-          required
-          animationDelay="animate-delay-200"
+    <AnimatedFormContainer
+      title="🔐 เข้าสู่ระบบ"
+      description="เข้าสู่ระบบจัดการโครงงานพิเศษ"
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Email Input */}
+        <EmailInput
+          {...register("email")}
+          error={errors.email?.message}
+          animationClass="animate-fadeInLeft animate-delay-500"
         />
-        
-        <InputField
-          label="รหัสผ่าน"
-          icon="🔒"
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="กรุณาใส่รหัสผ่าน"
-          required
-          animationDelay="animate-delay-300"
+
+        {/* Password Input */}
+        <PasswordInput
+          {...register("password")}
+          error={errors.password?.message}
+          animationClass="animate-fadeInRight animate-delay-600"
         />
-        
-        <ErrorMessage message={error} />
-        
-        <Button
-          type="submit"
-          animationDelay="animate-delay-400"
+
+        {/* Root Error */}
+        {errors.root && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 animate-fadeInUp animate-delay-300">
+            <p className="text-sm text-red-600 animate-pulse">❌ {errors.root.message}</p>
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <SubmitButton
+          isSubmitting={isSubmitting}
+          animationClass="animate-fadeInUp animate-delay-700"
+          loadingText="กำลังเข้าสู่ระบบ..."
         >
-          ✅ เข้าสู่ระบบ
-        </Button>
-      </FormContainer>
-      
-      <LinkText
-        text="ยังไม่มีบัญชี?"
-        linkText="📝 ลงทะเบียนที่นี่"
-        href="/signup"
-        animationDelay="animate-delay-500"
-      />
-    </AuthLayout>
+          🚀 เข้าสู่ระบบ
+        </SubmitButton>
+
+        {/* Link to Signup */}
+        <div className="text-center animate-fadeInUp animate-delay-800">
+          <p className="text-sm text-gray-600">
+            ยังไม่มีบัญชี?{" "}
+            <Link
+              href="/signup"
+              className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
+            >
+              ลงทะเบียนที่นี่
+            </Link>
+          </p>
+        </div>
+      </form>
+    </AnimatedFormContainer>
   );
 }
