@@ -33,10 +33,31 @@ export default function Login() {
       if (!response.ok) throw new Error(data.error || "Failed to login");
       setError("");
       
-      // ใช้ฟังก์ชัน login helper แทน localStorage.setItem โดยตรง
-      login("dummy-token", { fullName: "Test User", email: formData.email });
+      // Debug: แสดงข้อมูลที่ได้จาก backend
+      console.log("Login response data:", data);
       
-      router.push("/");
+      // ตรวจสอบว่า backend ส่งข้อมูล user มาหรือไม่
+      if (!data.user) {
+        throw new Error("No user data received from backend");
+      }
+      
+      // บันทึกข้อมูล login และ redirect ตาม role (ใช้ข้อมูลจาก backend เท่านั้น)
+      const userData = data.user;
+      console.log("User data for login:", userData);
+      
+      login("dummy-token", userData);
+      
+      // Redirect ตาม role
+      console.log("Redirecting based on role:", userData.role);
+      if (userData.role === "student") {
+        router.push("/student/dashboard");
+      } else if (userData.role === "advisor") {
+        router.push("/advisor/dashboard");
+      } else if (userData.role === "admin") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/");
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
       setError(errorMessage);
