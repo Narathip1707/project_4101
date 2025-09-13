@@ -213,15 +213,24 @@ func main() {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 		}
 
+		// Debug: แสดงข้อมูลที่ได้รับ
+		log.Printf("=== SIGNUP DEBUG ===")
+		log.Printf("Raw Body: %s", string(c.Body()))
+		log.Printf("Parsed - Email: %s, Role: %s, StudentID: %s, EmployeeID: %s",
+			input.Email, input.Role, input.StudentID, input.EmployeeID)
+
 		if input.Email == "" || input.Password == "" || input.FullName == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email, password and fullName are required"})
 		}
 
 		// Basic role default and validation
 		role := input.Role
+		log.Printf("Role before processing: '%s'", role)
 		if role == "" {
+			log.Printf("Role was empty, setting to student")
 			role = "student"
 		}
+		log.Printf("Role after processing: '%s'", role)
 		if role != "student" && role != "advisor" && role != "admin" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid role"})
 		}
@@ -250,6 +259,8 @@ func main() {
 			StudentID:    input.StudentID,
 			EmployeeID:   input.EmployeeID,
 		}
+
+		log.Printf("Creating user with Role: '%s'", user.Role)
 
 		if err := db.Create(&user).Error; err != nil {
 			log.Printf("User creation error: %v", err)

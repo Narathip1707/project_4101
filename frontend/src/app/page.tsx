@@ -21,10 +21,19 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true); //test
-      setUser({ fullName: "Test User" }); // เปลี่ยนเป็น API Call จริง
+    checkAuthStatus();
+    
+    // Redirect logged-in users to their dashboard
+    const authenticated = isAuthenticated();
+    if (authenticated) {
+      const userInfo = getUserInfo();
+      if (userInfo?.role === "student") {
+        window.location.href = "/student/dashboard";
+      } else if (userInfo?.role === "advisor") {
+        window.location.href = "/advisor/dashboard";
+      } else if (userInfo?.role === "admin") {
+        window.location.href = "/admin/dashboard";
+      }
     }
   }, []);
 
