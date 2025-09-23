@@ -46,7 +46,7 @@ export default function SignUp() {
       // Debug: แสดงข้อมูลที่ส่งไป backend
       console.log("Signup request body:", body);
 
-      const response = await fetch(`http://localhost:8080/api/signup`, {
+      const response = await fetch(`http://localhost:8081/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

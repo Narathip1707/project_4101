@@ -47,7 +47,7 @@ export default function StudentDashboard() {
   const loadStudentData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8080";
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
       
       // Mock data for now - replace with real API calls
       setTimeout(() => {
