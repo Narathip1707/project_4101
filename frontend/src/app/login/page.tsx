@@ -24,7 +24,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const url = `http://localhost:8080/api/login`;
+      const url = `http://localhost:8081/api/login`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
