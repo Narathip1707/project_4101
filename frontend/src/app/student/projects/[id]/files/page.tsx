@@ -13,84 +13,55 @@ type FileItem = {
   comments?: string;
 };
 
-export default function ProjectFiles({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ProjectFiles({ params }: { params: Promise<{ id: string }> }) {
+  const [id, setId] = useState<string>("");
+  
+  useEffect(() => {
+    async function getParams() {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
+    }
+    getParams();
+  }, [params]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("progress_report");
   const router = useRouter();
 
   useEffect(() => {
-    loadFiles();
+    if (id) {
+      loadFiles();
+    }
   }, [id]);
 
   const loadFiles = async () => {
     try {
-      // Mock data for now
-      setFiles([
-        {
-          id: "1",
-          file_name: "รายงานความก้าวหน้าครั้งที่ 1.pdf",
-          file_category: "progress_report",
-          file_status: "approved",
-          uploaded_at: "2024-09-10T14:30:00Z",
-          file_size: 2048000,
-        },
-        {
-          id: "2",
-          file_name: "ซอร์สโค้ด_เวอร์ชัน_1.zip",
-          file_category: "source_code",
-          file_status: "pending",
-          uploaded_at: "2024-09-12T09:15:00Z",
-          file_size: 5120000,
-        },
-        {
-          id: "3",
-          file_name: "เอกสารการออกแบบระบบ.docx",
-          file_category: "documentation",
-          file_status: "rejected",
-          uploaded_at: "2024-09-08T16:45:00Z",
-          file_size: 1024000,
-          comments: "กรุณาเพิ่มรายละเอียดของ Use Case Diagram",
-        },
-      ]);
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${baseUrl}/api/projects/${id}/files`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const formattedFiles: FileItem[] = data.map((file: any) => ({
+          id: file.id,
+          file_name: file.file_name,
+          file_category: file.file_category,
+          file_status: file.file_status || 'pending',
+          uploaded_at: file.created_at || file.uploaded_at,
+          file_size: file.file_size || 0,
+          comments: file.description || file.comments,
+        }));
+        setFiles(formattedFiles);
+      } else {
+        console.error('Failed to load files');
+        setFiles([]);
+      }
     } catch (error) {
       console.error("Error loading files:", error);
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("file_category", selectedCategory);
-      formData.append("project_id", id);
-
-      // Mock upload - replace with actual API call
-      setTimeout(() => {
-        const newFile: FileItem = {
-          id: Date.now().toString(),
-          file_name: file.name,
-          file_category: selectedCategory,
-          file_status: "pending",
-          uploaded_at: new Date().toISOString(),
-          file_size: file.size,
-        };
-        setFiles(prev => [newFile, ...prev]);
-        setUploading(false);
-        // Reset file input
-        if (event.target) {
-          event.target.value = "";
-        }
-      }, 2000);
-
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      setUploading(false);
+      setFiles([]);
     }
   };
 
@@ -132,11 +103,47 @@ export default function ProjectFiles({ params }: { params: { id: string } }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+      const token = localStorage.getItem("token");
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("project_id", id);
+      formData.append("file_category", selectedCategory);
+
+      const response = await fetch(`${baseUrl}/api/projects/${id}/files`, {
+        method: "POST",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (response.ok) {
+        await loadFiles(); // Reload files list
+        alert("อัปโหลดไฟล์สำเร็จ!");
+      } else {
+        alert("ไม่สามารถอัปโหลดไฟล์ได้");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("เกิดข้อผิดพลาดในการอัปโหลด");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleDownload = (fileId: string, fileName: string) => {
-    // Mock download - replace with actual API call
+    // Real API download
+    const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
     const link = document.createElement("a");
-    link.href = `${process.env.NEXT_PUBLIC_API}/project-files/${fileId}/download`;
+    link.href = `${baseUrl}/api/files/${fileId}/download`;
     link.download = fileName;
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

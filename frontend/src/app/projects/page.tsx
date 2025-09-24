@@ -26,42 +26,41 @@ export default function Projects() {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
-      // Mock data - ในอนาคตจะเป็น API Call จริง
-      const mockProjects: Project[] = [
-        {
-          id: "1",
-          title: "ระบบจัดการข้อมูลนักศึกษาออนไลน์",
-          description: "พัฒนาระบบเว็บแอปพลิเคชันสำหรับจัดการข้อมูลนักศึกษา รวมถึงการลงทะเบียนเรียน การดูผลการเรียน และการติดต่อสื่อสาร",
-          status: "submitted",
-          advisor: "อ.ดร.สมชาย ใจดี",
-          createdDate: "2024-01-15",
-          lastModified: "2024-02-01",
-          members: ["นาย ทดสอบ ระบบ", "นาย สมศักดิ์ ดีมาก"]
-        },
-        {
-          id: "2",
-          title: "แอปพลิเคชันจัดการคลังสินค้า",
-          description: "สร้างแอปพลิเคชันมือถือสำหรับจัดการสต็อกสินค้า ติดตามการเข้า-ออกของสินค้า และสร้างรายงานสรุป",
-          status: "draft",
-          advisor: "อ.ดร.วิไล เก่งมาก",
-          createdDate: "2024-02-10",
-          lastModified: "2024-02-20",
-          members: ["นาย ทดสอบ ระบบ"]
-        },
-        {
-          id: "3",
-          title: "ระบบแนะนำหนังสือด้วย AI",
-          description: "พัฒนาระบบแนะนำหนังสือโดยใช้เทคนิค Machine Learning เพื่อวิเคราะห์ความชอบของผู้ใช้และแนะนำหนังสือที่เหมาะสม",
-          status: "approved",
-          advisor: "อ.ดร.ปัญญา เจ้าปัญญา",
-          createdDate: "2023-11-01",
-          lastModified: "2024-01-15",
-          members: ["นาย ทดสอบ ระบบ", "นาง สมหญิง เก่งมาก", "นาย วิทยา รู้ดี"]
-        }
-      ];
-      setProjects(mockProjects);
+      loadProjects();
     }
   }, []);
+
+  const loadProjects = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${baseUrl}/api/projects`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const formattedProjects: Project[] = data.map((project: any) => ({
+          id: project.id,
+          title: project.title || 'ไม่มีชื่อโปรเจค',
+          description: project.description || 'ไม่มีคำอธิบาย',
+          status: project.status || 'proposal',
+          advisor: project.advisor?.user?.full_name || 'ยังไม่ได้กำหนดอาจารย์',
+          createdDate: project.created_at ? new Date(project.created_at).toLocaleDateString('th-TH') : 'ไม่ระบุ',
+          lastModified: project.updated_at ? new Date(project.updated_at).toLocaleDateString('th-TH') : 'ไม่ระบุ',
+          members: [project.student?.user?.full_name || 'ไม่ระบุ']
+        }));
+        setProjects(formattedProjects);
+      } else {
+        console.error('Failed to load projects');
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      setProjects([]);
+    }
+  };
 
   const getStatusColor = (status: Project["status"]) => {
     switch (status) {

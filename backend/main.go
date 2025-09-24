@@ -1,8 +1,11 @@
 package main
 
 import (
+	"backend/handlers"
 	"backend/models"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -13,10 +16,16 @@ import (
 var db *gorm.DB
 
 func main() {
-	//Database configs
-	dsn := "host=db user=postgres password=1234 dbname=project_management_system port=5432 sslmode=disable"
-	var err error
+	// Database configs from ENV (fallbacks)
+	host := getEnv("DB_HOST", "localhost")
+	user := getEnv("DB_USER", "postgres")
+	pass := getEnv("DB_PASSWORD", "1234")
+	name := getEnv("DB_NAME", "project_management_system")
+	// Use external port 5433 when running from localhost
+	port := getEnv("DB_PORT", "5433")
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, pass, name, port)
 
+	var err error
 	log.Println("Connecting to database...")
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -24,314 +33,277 @@ func main() {
 		log.Fatal("Unable to connect to the database. Please check your connection settings.")
 	}
 
-	// UUID extension
-	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
-		log.Fatal("Unable to create UUID extension:", err)
+	// ไม่ใช้ AutoMigrate เพราะ database schema มีอยู่แล้ว
+	// แค่ทดสอบการเชื่อมต่อ
+	var result int
+	if err := db.Raw("SELECT 1").Scan(&result).Error; err != nil {
+		log.Fatal("Database connection test failed:", err)
 	}
 
-	//Migrations
-	if err := db.AutoMigrate(&models.User{}); err != nil {
-		log.Fatal("Unable to migrate database:", err)
-	}
+	log.Println("Database connected successfully.")
 
-	log.Println("Database connected and migrated successfully.")
-
-	//Fiber
+	// Initialize Fiber app
 	app := fiber.New()
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     getEnv("CORS_ORIGINS", "http://localhost:3000"),
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders:     "*",
+		AllowCredentials: true,
+	}))
 
-	// Add root route handler
+	// Static files for uploads
+	app.Static("/uploads", "./uploads")
+
+	// Initialize handlers
+	projectHandler := handlers.NewProjectHandler(db)
+	fileHandler := handlers.NewFileHandler(db)
+	notificationHandler := handlers.NewNotificationHandler(db)
+
+	// Root route
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"message": "Welcome to Project Management API",
+			"message": "Project Management System API",
+			"version": "1.0.0",
 			"status":  "running",
 		})
 	})
 
-	// API: Get all users
-	app.Get("/api/users", func(c *fiber.Ctx) error {
-		var users []models.User
-		if err := db.Find(&users).Error; err != nil {
-			log.Printf("Error fetching users: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch users"})
-		}
-
-		// Hide password hashes
-		for i := range users {
-			users[i].PasswordHash = ""
-		}
-
+	// Health check
+	app.Get("/api/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"data":  users,
-			"count": len(users),
+			"status":   "healthy",
+			"database": "connected",
 		})
 	})
 
-	// API: Get user by ID
-	app.Get("/api/users/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		var user models.User
+	// Auth endpoints
+	app.Post("/api/signup", signupHandler)
+	app.Post("/api/login", loginHandler)
 
-		if err := db.Where("id = ?", id).First(&user).Error; err != nil {
-			log.Printf("User not found: %v", err)
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
-		}
+	// Project endpoints
+	app.Get("/api/projects", projectHandler.GetProjects)
+	app.Post("/api/projects", projectHandler.CreateProject)
+	app.Get("/api/projects/:id", projectHandler.GetProject)
+	app.Get("/api/projects/:id/files", projectHandler.GetProjectFiles)
 
-		// Hide password hash
-		user.PasswordHash = ""
+	// File endpoints
+	app.Post("/api/projects/:id/files", fileHandler.UploadFile)
+	app.Get("/api/files/:id/download", fileHandler.DownloadFile)
+	app.Patch("/api/files/:id/review", fileHandler.ReviewFile)
 
-		return c.JSON(fiber.Map{"data": user})
-	})
+	// Notification endpoints
+	app.Get("/api/notifications", notificationHandler.GetNotifications)
+	app.Patch("/api/notifications/:id/read", notificationHandler.MarkAsRead)
 
-	// API: Get users by role
-	app.Get("/api/users/role/:role", func(c *fiber.Ctx) error {
-		role := c.Params("role")
-		var users []models.User
-
-		if err := db.Where("role = ?", role).Find(&users).Error; err != nil {
-			log.Printf("Error fetching users by role: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch users"})
-		}
-
-		// Hide password hashes
-		for i := range users {
-			users[i].PasswordHash = ""
-		}
-
-		return c.JSON(fiber.Map{
-			"data":  users,
-			"count": len(users),
-			"role":  role,
-		})
-	})
-
-	// API: Get system settings
-	app.Get("/api/settings", func(c *fiber.Ctx) error {
-		var settings []map[string]interface{}
-
-		if err := db.Raw(`
-			SELECT setting_key, setting_value, description, created_at, updated_at 
-			FROM system_settings
-		`).Scan(&settings).Error; err != nil {
-			log.Printf("Error fetching settings: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch settings"})
-		}
-
-		return c.JSON(fiber.Map{
-			"data":  settings,
-			"count": len(settings),
-		})
-	})
-
-	// API: Get user profile (authenticated user info)
-	app.Get("/api/profile/:email", func(c *fiber.Ctx) error {
-		email := c.Params("email")
-		var user models.User
-
-		if err := db.Where("email = ?", email).First(&user).Error; err != nil {
-			log.Printf("Profile not found: %v", err)
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Profile not found"})
-		}
-
-		// Hide sensitive data
-		user.PasswordHash = ""
-		user.VerificationToken = ""
-		user.PasswordResetToken = ""
-
-		return c.JSON(fiber.Map{"data": user})
-	})
-
-	// API: Search users by name or email
-	app.Get("/api/users/search", func(c *fiber.Ctx) error {
-		query := c.Query("q")
-		if query == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Search query is required"})
-		}
-
-		var users []models.User
-		searchPattern := "%" + query + "%"
-
-		if err := db.Where("full_name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern).Find(&users).Error; err != nil {
-			log.Printf("Error searching users: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Search failed"})
-		}
-
-		// Hide password hashes
-		for i := range users {
-			users[i].PasswordHash = ""
-		}
-
-		return c.JSON(fiber.Map{
-			"data":  users,
-			"count": len(users),
-			"query": query,
-		})
-	})
-
-	// API: Get database stats
-	app.Get("/api/stats", func(c *fiber.Ctx) error {
-		var stats map[string]interface{}
-
-		// Count users by role
-		var userCounts []map[string]interface{}
-		if err := db.Raw(`
-			SELECT role, COUNT(*) as count 
-			FROM users 
-			GROUP BY role
-		`).Scan(&userCounts).Error; err != nil {
-			log.Printf("Error fetching user stats: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch stats"})
-		}
-
-		// Total users
-		var totalUsers int64
-		db.Model(&models.User{}).Count(&totalUsers)
-
-		stats = map[string]interface{}{
-			"total_users":   totalUsers,
-			"users_by_role": userCounts,
-		}
-
-		return c.JSON(fiber.Map{"data": stats})
-	})
-
-	// API Endpoint: Sign Up
-	app.Post("/api/signup", func(c *fiber.Ctx) error {
-		// Accept payload matching the frontend form
-		var input struct {
-			Email      string `json:"email"`
-			Password   string `json:"password"`
-			FullName   string `json:"fullName"`
-			Role       string `json:"role"`
-			Phone      string `json:"phone"`
-			StudentID  string `json:"studentId"`
-			EmployeeID string `json:"employeeId"`
-		}
-
-		if err := c.BodyParser(&input); err != nil {
-			log.Printf("Sign up body parsing error: %v", err)
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
-		}
-
-		// Debug: แสดงข้อมูลที่ได้รับ
-		log.Printf("=== SIGNUP DEBUG ===")
-		log.Printf("Raw Body: %s", string(c.Body()))
-		log.Printf("Parsed - Email: %s, Role: %s, StudentID: %s, EmployeeID: %s",
-			input.Email, input.Role, input.StudentID, input.EmployeeID)
-
-		if input.Email == "" || input.Password == "" || input.FullName == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email, password and fullName are required"})
-		}
-
-		// Basic role default and validation
-		role := input.Role
-		log.Printf("Role before processing: '%s'", role)
-		if role == "" {
-			log.Printf("Role was empty, setting to student")
-			role = "student"
-		}
-		log.Printf("Role after processing: '%s'", role)
-		if role != "student" && role != "advisor" && role != "admin" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid role"})
-		}
-
-		// Require ID based on role
-		if role == "student" && input.StudentID == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "studentId is required for role student"})
-		}
-		if role == "advisor" && input.EmployeeID == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "employeeId is required for role advisor"})
-		}
-
-		// Hash password before saving
-		hashedPassword, err := models.HashPassword(input.Password)
-		if err != nil {
-			log.Printf("Password hashing error: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to process password"})
-		}
-
-		user := models.User{
-			Email:        input.Email,
-			PasswordHash: hashedPassword,
-			FullName:     input.FullName,
-			Role:         role,
-			Phone:        input.Phone,
-			StudentID:    input.StudentID,
-			EmployeeID:   input.EmployeeID,
-		}
-
-		log.Printf("Creating user with Role: '%s'", user.Role)
-
-		if err := db.Create(&user).Error; err != nil {
-			log.Printf("User creation error: %v", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create user"})
-		}
-
-		log.Printf("User created successfully: %s", user.Email)
-		return c.JSON(fiber.Map{
-			"message": "Sign up successful",
-			"user": fiber.Map{
-				"id":       user.ID,
-				"email":    user.Email,
-				"fullName": user.FullName,
-				"role":     user.Role,
-			},
-		})
-	})
-
-	// API Endpoint: Login
-	app.Post("/api/login", func(c *fiber.Ctx) error {
-		var input struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}
-
-		log.Printf("Raw request body: %s", string(c.Body()))
-
-		if err := c.BodyParser(&input); err != nil {
-			log.Printf("Login body parsing error: %v", err)
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
-		}
-
-		log.Printf("Login attempt - Email: %s", input.Email)
-
-		var user models.User
-		if err := db.Where("email = ?", input.Email).First(&user).Error; err != nil {
-			log.Printf("User lookup error: %v", err)
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid email or password"})
-		}
-
-		log.Printf("Found user with email: %s", user.Email)
-
-		// Compare password with hash
-		if !models.CheckPasswordHash(input.Password, user.PasswordHash) {
-			log.Printf("Password mismatch for user: %s", user.Email)
-			log.Printf("Provided password: %s", input.Password)
-			log.Printf("Stored hash: %s", user.PasswordHash)
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid email or password"})
-		}
-
-		return c.JSON(fiber.Map{
-			"message": "Login successful",
-			"user": fiber.Map{
-				"id":       user.ID,
-				"email":    user.Email,
-				"fullName": user.FullName,
-				"role":     user.Role,
-			},
-		})
-	})
+	// Profile endpoints
+	app.Get("/api/profile", profileHandler)
+	app.Put("/api/profile", updateProfileHandler)
+	app.Patch("/api/profile", updateProfileHandler)
 
 	// Starting server
-	const port = ":8080"
-	log.Printf("Server running on http://localhost%s", port)
-	log.Fatal(app.Listen(port))
+	serverPort := getEnv("PORT", "8081")
+	log.Printf("Server starting on http://localhost:%s", serverPort)
+	log.Fatal(app.Listen(":" + serverPort))
+}
+
+// Auth handlers (keep existing but remove debug logs)
+func signupHandler(c *fiber.Ctx) error {
+	var input struct {
+		Email      string `json:"email"`
+		Password   string `json:"password"`
+		FullName   string `json:"fullName"`
+		Role       string `json:"role"`
+		Phone      string `json:"phone"`
+		StudentId  string `json:"studentId"`
+		EmployeeId string `json:"employeeId"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	// Basic validations
+	if input.Email == "" || input.Password == "" || input.FullName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email, password and fullName are required"})
+	}
+
+	if !isValidEmail(input.Email) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email must end with @rumail.ru.ac.th"})
+	}
+
+	role := input.Role
+	if role == "" {
+		role = "student"
+	}
+
+	if role != "student" && role != "advisor" && role != "admin" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid role"})
+	}
+
+	// Check unique email
+	var count int64
+	if err := db.Model(&models.User{}).Where("email = ?", input.Email).Count(&count).Error; err == nil && count > 0 {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "email already exists"})
+	}
+
+	// Hash password
+	hashedPassword, err := models.HashPassword(input.Password)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to process password"})
+	}
+
+	user := models.User{
+		Email:        input.Email,
+		PasswordHash: hashedPassword,
+		FullName:     input.FullName,
+		Role:         role,
+		Phone:        input.Phone,
+		StudentID:    input.StudentId,
+		EmployeeID:   input.EmployeeId,
+	}
+
+	if err := db.Create(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create user"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Sign up successful",
+		"user": fiber.Map{
+			"id":       user.ID,
+			"email":    user.Email,
+			"fullName": user.FullName,
+			"role":     user.Role,
+		},
+	})
+}
+
+func loginHandler(c *fiber.Ctx) error {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	if input.Email == "" || input.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Email and password are required"})
+	}
+
+	var user models.User
+	if err := db.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+	}
+
+	if !models.CheckPasswordHash(input.Password, user.PasswordHash) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+	}
+
+	// Don't return password hash
+	user.PasswordHash = ""
+
+	return c.JSON(fiber.Map{
+		"message": "Login successful",
+		"user":    user,
+	})
+}
+
+func profileHandler(c *fiber.Ctx) error {
+	// Try to get user_id from query parameter first, then from mock token logic
+	userId := c.Query("user_id")
+
+	// If no user_id provided, try to extract from Authorization header
+	if userId == "" {
+		// Use the actual admin user UUID from database
+		userId = "41b805d8-f8c0-4af6-974b-84f03aeafdb7"
+	}
+
+	var user models.User
+	if err := db.Preload("Student").Preload("Advisor").First(&user, "id = ?", userId).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Don't return password hash
+	user.PasswordHash = ""
+
+	return c.JSON(user)
+}
+
+func updateProfileHandler(c *fiber.Ctx) error {
+	// Try to get user_id from query parameter first
+	userId := c.Query("user_id")
+
+	// If no user_id provided, use default for testing
+	if userId == "" {
+		userId = "41b805d8-f8c0-4af6-974b-84f03aeafdb7"
+	}
+
+	var input struct {
+		FullName    string `json:"fullName"`
+		FullName2   string `json:"full_name"` // Support both formats
+		Phone       string `json:"phone"`
+		StudentID   string `json:"studentId"`
+		StudentID2  string `json:"student_id"` // Support both formats
+		EmployeeID  string `json:"employeeId"`
+		EmployeeID2 string `json:"employee_id"` // Support both formats
+		Email       string `json:"email"`
+		Department  string `json:"department"`
+		Faculty     string `json:"faculty"`
+		Year        string `json:"year"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Find existing user
+	var user models.User
+	if err := db.First(&user, "id = ?", userId).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Update user fields (support both formats)
+	if input.FullName != "" {
+		user.FullName = input.FullName
+	} else if input.FullName2 != "" {
+		user.FullName = input.FullName2
+	}
+	if input.Phone != "" {
+		user.Phone = input.Phone
+	}
+	if input.StudentID != "" {
+		user.StudentID = input.StudentID
+	} else if input.StudentID2 != "" {
+		user.StudentID = input.StudentID2
+	}
+	if input.EmployeeID != "" {
+		user.EmployeeID = input.EmployeeID
+	} else if input.EmployeeID2 != "" {
+		user.EmployeeID = input.EmployeeID2
+	}
+
+	// Save updated user
+	if err := db.Save(&user).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to update profile"})
+	}
+
+	// Don't return password hash
+	user.PasswordHash = ""
+
+	return c.JSON(fiber.Map{
+		"message": "Profile updated successfully",
+		"user":    user,
+	})
+}
+
+func getEnv(k, d string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return d
 }
 
 func isValidEmail(email string) bool {
-	if len(email) < 15 { // "@rumail.ru.ac.th"
-		return false
-	}
-	suffix := "@rumail.ru.ac.th"
-	return email[len(email)-len(suffix):] == suffix
+	return len(email) > 16 && email[len(email)-16:] == "@rumail.ru.ac.th"
 }

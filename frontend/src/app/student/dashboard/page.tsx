@@ -49,55 +49,45 @@ export default function StudentDashboard() {
       const token = localStorage.getItem("token");
       const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
       
-      // Mock data for now - replace with real API calls
-      setTimeout(() => {
-        setProjects([
-          {
-            id: "1",
-            title: "ระบบจัดการข้อมูลนักศึกษา",
-            description: "พัฒนาเว็บแอปพลิเคชันสำหรับจัดการข้อมูลนักศึกษา",
-            status: "in_progress",
-            advisor_name: "อ.ดร.สมชาย ใจดี",
-            start_date: "2024-08-15",
-          },
-        ]);
-        
-        setRecentFiles([
-          {
-            id: "1",
-            file_name: "รายงานความก้าวหน้าครั้งที่ 1.pdf",
-            file_category: "progress_report",
-            file_status: "approved",
-            uploaded_at: "2024-09-10",
-          },
-          {
-            id: "2",
-            file_name: "ซอร์สโค้ด_เวอร์ชัน_1.zip",
-            file_category: "source_code",
-            file_status: "pending",
-            uploaded_at: "2024-09-12",
-          },
-        ]);
-        
-        setNotifications([
-          {
-            id: "1",
-            title: "ไฟล์ได้รับการอนุมัติ",
-            message: "รายงานความก้าวหน้าครั้งที่ 1 ได้รับการอนุมัติแล้ว",
-            created_at: "2024-09-11T10:30:00Z",
-            is_read: false,
-          },
-          {
-            id: "2",
-            title: "กำหนดส่งงาน",
-            message: "กำหนดส่งรายงานความก้าวหน้าครั้งที่ 2 วันที่ 30 ก.ย. 2567",
-            created_at: "2024-09-08T14:00:00Z",
-            is_read: true,
-          },
-        ]);
-        
-        setLoading(false);
-      }, 1000);
+      // Load real projects data
+      const projectsResponse = await fetch(`${baseUrl}/api/projects?limit=5`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (projectsResponse.ok) {
+        const projectsData = await projectsResponse.json();
+        const formattedProjects = projectsData.map((project: any) => ({
+          id: project.id,
+          title: project.title || 'ไม่มีชื่อโปรเจค',
+          description: project.description || 'ไม่มีคำอธิบาย',
+          status: project.status || 'proposal',
+          advisor_name: project.advisor?.user?.full_name || 'ยังไม่ได้กำหนดอาจารย์',
+          start_date: project.start_date || project.created_at,
+        }));
+        setProjects(formattedProjects);
+      } else {
+        // Fallback to empty array if API fails
+        setProjects([]);
+      }
+      
+      // Load recent files - for now, use empty array since we need specific user's files
+      // TODO: Add API endpoint for user's recent files
+      setRecentFiles([]);
+      
+      // Load notifications
+      const notificationsResponse = await fetch(`${baseUrl}/api/notifications?limit=5`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (notificationsResponse.ok) {
+        const notificationsData = await notificationsResponse.json();
+        setNotifications(notificationsData);
+      } else {
+        // Fallback to empty array
+        setNotifications([]);
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error("Error loading student data:", error);
       setLoading(false);
