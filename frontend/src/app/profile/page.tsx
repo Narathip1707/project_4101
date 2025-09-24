@@ -25,28 +25,121 @@ export default function Profile() {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
-      // Mock data - ในอนาคตจะเป็น API Call จริง
-      const mockUser = {
-        id: "1",
-        fullName: "นาย ทดสอบ ระบบ",
-        email: "test@email.ru.ac.th",
-        studentId: "64114000000",
-        department: "วิทยาการคอมพิวเตอร์",
-        faculty: "วิทยาศาสตร์",
-        phone: "081-234-5678",
-        year: "4"
-      };
-      setUser(mockUser);
-      setEditForm(mockUser);
+      loadUserProfile();
     }
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+      
+      const response = await fetch(`${baseUrl}/api/profile`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        const formattedUser = {
+          id: userData.id,
+          fullName: userData.full_name || userData.fullName || 'ไม่มีชื่อ',
+          email: userData.email || 'ไม่มีอีเมล',
+          studentId: userData.student_id || userData.employee_id || 'ไม่มีรหัส',
+          department: userData.department || 'ไม่ระบุแผนก',
+          faculty: userData.faculty || 'ไม่ระบุคณะ',
+          phone: userData.phone || 'ไม่ระบุเบอร์โทร',
+          year: userData.year || userData.academic_year || 'ไม่ระบุปี',
+          profileImage: userData.profile_image
+        };
+        setUser(formattedUser);
+        setEditForm(formattedUser);
+      } else {
+        // Fallback to localStorage userInfo if API fails
+        const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+        const fallbackUser = {
+          id: userInfo.id || "1",
+          fullName: userInfo.fullName || userInfo.full_name || "ไม่มีชื่อ",
+          email: userInfo.email || "ไม่มีอีเมล",
+          studentId: userInfo.studentId || userInfo.student_id || userInfo.employee_id || "ไม่มีรหัส",
+          department: userInfo.department || "ไม่ระบุแผนก",
+          faculty: userInfo.faculty || "ไม่ระบุคณะ",
+          phone: userInfo.phone || "ไม่ระบุเบอร์โทร",
+          year: userInfo.year || "ไม่ระบุปี"
+        };
+        setUser(fallbackUser);
+        setEditForm(fallbackUser);
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+      // Use fallback data from localStorage
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      const fallbackUser = {
+        id: userInfo.id || "1",
+        fullName: userInfo.fullName || userInfo.full_name || "ไม่มีชื่อ",
+        email: userInfo.email || "ไม่มีอีเมล",
+        studentId: userInfo.studentId || userInfo.student_id || userInfo.employee_id || "ไม่มีรหัส",
+        department: userInfo.department || "ไม่ระบุแผนก",
+        faculty: userInfo.faculty || "ไม่ระบุคณะ",
+        phone: userInfo.phone || "ไม่ระบุเบอร์โทร",
+        year: userInfo.year || "ไม่ระบุปี"
+      };
+      setUser(fallbackUser);
+      setEditForm(fallbackUser);
+    }
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editForm) {
+      try {
+        const token = localStorage.getItem("token");
+        const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+        
+        const response = await fetch(`${baseUrl}/api/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            full_name: editForm.fullName,
+            email: editForm.email,
+            phone: editForm.phone,
+            department: editForm.department,
+            faculty: editForm.faculty,
+            year: editForm.year
+          })
+        });
+        
+        if (response.ok) {
+          setUser(editForm);
+          // Update localStorage userInfo as well
+          const currentUserInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+          const updatedUserInfo = {
+            ...currentUserInfo,
+            fullName: editForm.fullName,
+            full_name: editForm.fullName,
+            email: editForm.email,
+            phone: editForm.phone,
+            department: editForm.department,
+            faculty: editForm.faculty,
+            year: editForm.year
+          };
+          localStorage.setItem("userInfo", JSON.stringify(updatedUserInfo));
+        } else {
+          console.error("Failed to update profile");
+          alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่");
+          return;
+        }
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        return;
+      }
+      
       setUser(editForm);
       setIsEditing(false);
       // ในอนาคตจะเป็น API Call เพื่อบันทึกข้อมูล

@@ -3,33 +3,37 @@ package models
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type Project struct {
-	ID              string         `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	StudentID       string         `gorm:"type:uuid;not null"`
-	AdvisorID       string         `gorm:"type:uuid"`
-	Title           string         `gorm:"type:varchar(500);not null" validate:"required,min=10"`
-	Description     string         `gorm:"type:text"`
-	Objectives      string         `gorm:"type:text"`
-	Scope           string         `gorm:"type:text"`
-	Methodology     string         `gorm:"type:text"`
-	ExpectedOutcome string         `gorm:"type:text"`
-	Keywords        []string       `gorm:"type:text[]"`
-	Status          string         `gorm:"type:varchar(20)" validate:"oneof=proposal approved in_progress completed cancelled"`
-	StartDate       time.Time      `gorm:"type:date"`
-	ExpectedEndDate time.Time      `gorm:"type:date"`
-	ActualEndDate   time.Time      `gorm:"type:date"`
-	Grade           string         `gorm:"type:varchar(5)"`
-	CreatedAt       time.Time      `gorm:"type:timestamp;autoCreateTime"`
-	UpdatedAt       time.Time      `gorm:"type:timestamp;autoUpdateTime"`
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
+	ID              string         `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	StudentID       string         `gorm:"type:uuid;column:student_id" json:"student_id"`
+	AdvisorID       *string        `gorm:"type:uuid;column:advisor_id" json:"advisor_id,omitempty"`
+	Title           string         `gorm:"type:varchar(500);not null" json:"title"`
+	Description     string         `gorm:"type:text" json:"description,omitempty"`
+	Objectives      string         `gorm:"type:text" json:"objectives,omitempty"`
+	Scope           string         `gorm:"type:text" json:"scope,omitempty"`
+	Methodology     string         `gorm:"type:text" json:"methodology,omitempty"`
+	ExpectedOutcome string         `gorm:"type:text;column:expected_outcome" json:"expected_outcome,omitempty"`
+	Keywords        pq.StringArray `gorm:"type:text[]" json:"keywords"`
+	Status          string         `gorm:"type:varchar(20);default:'proposal';check:status IN ('proposal','approved','in_progress','completed','cancelled')" json:"status"`
+	StartDate       *time.Time     `gorm:"type:date;column:start_date" json:"start_date,omitempty"`
+	ExpectedEndDate *time.Time     `gorm:"type:date;column:expected_end_date" json:"expected_end_date,omitempty"`
+	ActualEndDate   *time.Time     `gorm:"type:date;column:actual_end_date" json:"actual_end_date,omitempty"`
+	Grade           string         `gorm:"type:varchar(5)" json:"grade,omitempty"`
+	CreatedAt       time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP;column:created_at" json:"created_at"`
+	UpdatedAt       time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP;column:updated_at" json:"updated_at"`
 
-	// เพิ่ม relationships
-	Student *Student      `gorm:"foreignKey:StudentID"`
-	Advisor *Advisor      `gorm:"foreignKey:AdvisorID"`
-	Files   []ProjectFile `gorm:"foreignKey:ProjectID"`
+	// Relationships
+	Student      *Student      `gorm:"foreignKey:StudentID" json:"student,omitempty"`
+	Advisor      *Advisor      `gorm:"foreignKey:AdvisorID" json:"advisor,omitempty"`
+	ProjectFiles []ProjectFile `gorm:"foreignKey:ProjectID" json:"project_files,omitempty"`
+}
+
+func (Project) TableName() string {
+	return "projects"
 }
 
 // BeforeSave updates UpdatedAt before saving

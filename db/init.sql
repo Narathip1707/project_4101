@@ -182,3 +182,9 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
 
 INSERT INTO users (email, password_hash, full_name, role, is_verified) VALUES
 ('admin@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'ผู้ดูแลระบบ', 'admin', TRUE);
+
+-- Insert sample notifications
+INSERT INTO notifications (user_id, title, message, type, priority, is_read) VALUES
+((SELECT id FROM users WHERE email = 'admin@rumail.ru.ac.th'), 'ยินดีต้อนรับ', 'ยินดีต้อนรับเข้าสู่ระบบจัดการโครงงานพิเศษ', 'info', 'medium', FALSE),
+((SELECT id FROM users WHERE email = 'admin@rumail.ru.ac.th'), 'อัพเดทระบบ', 'ระบบได้รับการอัพเดทเป็นเวอร์ชันล่าสุดแล้ว', 'success', 'low', FALSE),
+((SELECT id FROM users WHERE email = 'admin@rumail.ru.ac.th'), 'การแจ้งเตือน', 'กรุณาตรวจสอบข้อมูลส่วนตัวให้ครบถ้วน', 'warning', 'high', FALSE);

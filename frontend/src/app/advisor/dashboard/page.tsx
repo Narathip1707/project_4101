@@ -46,75 +46,79 @@ export default function AdvisorDashboard() {
 
   const loadAdvisorData = async () => {
     try {
-      // Mock data for now - replace with real API calls
-      setTimeout(() => {
-        setStudents([
-          {
-            id: "1",
-            name: "นางสาวสมใจ ใจดี",
-            student_id: "6401234567",
-            project_title: "ระบบจัดการข้อมูลนักศึกษา",
-            project_status: "in_progress",
-            last_activity: "2024-09-12T10:30:00Z",
-          },
-          {
-            id: "2",
-            name: "นายสมชาย ดีใจ",
-            student_id: "6401234568",
-            project_title: "แอปพลิเคชันจัดการคลังสินค้า",
-            project_status: "proposal",
-            last_activity: "2024-09-10T14:15:00Z",
-          },
-          {
-            id: "3",
-            name: "นางสาวปัญญา เก่งดี",
-            student_id: "6401234569",
-            project_title: "ระบบแนะนำหนังสือด้วย AI",
-            project_status: "approved",
-            last_activity: "2024-09-11T16:45:00Z",
-          },
-        ]);
+      const token = localStorage.getItem("token");
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+      
+      // Load students with projects (projects where advisor is current user)
+      try {
+        const projectsResponse = await fetch(`${baseUrl}/api/projects?advisor=true`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        
+        if (projectsResponse.ok) {
+          const projectsData = await projectsResponse.json();
+          const studentsWithProjects = projectsData.map((project: any) => ({
+            id: `student_${project.student_id}`,
+            name: project.student?.user?.full_name || 'ไม่มีชื่อ',
+            student_id: project.student?.student_id || 'ไม่มีรหัส',
+            project_title: project.title || 'ไม่มีชื่อโปรเจค',
+            project_status: project.status || 'proposal',
+            last_activity: project.updated_at || project.created_at,
+          }));
+          setStudents(studentsWithProjects);
+        }
+      } catch (err) {
+        console.log('Error loading students:', err);
+        setStudents([]);
+      }
 
-        setPendingFiles([
-          {
-            id: "1",
-            file_name: "รายงานความก้าวหน้าครั้งที่ 2.pdf",
-            student_name: "นางสาวสมใจ ใจดี",
-            project_title: "ระบบจัดการข้อมูลนักศึกษา",
-            uploaded_at: "2024-09-12T09:15:00Z",
-            file_category: "progress_report",
-          },
-          {
-            id: "2",
-            file_name: "ซอร์สโค้ด_เวอร์ชัน_2.zip",
-            student_name: "นายสมชาย ดีใจ",
-            project_title: "แอปพลิเคชันจัดการคลังสินค้า",
-            uploaded_at: "2024-09-11T15:30:00Z",
-            file_category: "source_code",
-          },
-        ]);
+      // Load pending files for review
+      try {
+        const filesResponse = await fetch(`${baseUrl}/api/files?status=pending&advisor=true`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        
+        if (filesResponse.ok) {
+          const filesData = await filesResponse.json();
+          const pendingFilesData = filesData.map((file: any) => ({
+            id: file.id,
+            file_name: file.file_name || 'ไม่มีชื่อไฟล์',
+            student_name: file.project?.student?.user?.full_name || 'ไม่มีชื่อ',
+            project_title: file.project?.title || 'ไม่มีโปรเจค',
+            uploaded_at: file.uploaded_at,
+            file_category: file.file_category || 'general',
+          }));
+          setPendingFiles(pendingFilesData);
+        }
+      } catch (err) {
+        console.log('Error loading pending files:', err);
+        setPendingFiles([]);
+      }
 
-        setRecentMessages([
-          {
-            id: "1",
-            student_name: "นางสาวสมใจ ใจดี",
-            project_title: "ระบบจัดการข้อมูลนักศึกษา",
-            message: "อาจารย์ครับ ผมได้แก้ไข Use Case Diagram ตามที่แนะนำแล้ว กรุณาตรวจสอบด้วย",
-            created_at: "2024-09-12T11:20:00Z",
-            is_read: false,
-          },
-          {
-            id: "2",
-            student_name: "นายสมชาย ดีใจ",
-            project_title: "แอปพลิเคชันจัดการคลังสินค้า",
-            message: "ขอคำแนะนำเรื่องการออกแบบฐานข้อมูลครับ",
-            created_at: "2024-09-11T14:45:00Z",
-            is_read: true,
-          },
-        ]);
+      // Load recent notifications/messages
+      try {
+        const notificationsResponse = await fetch(`${baseUrl}/api/notifications?limit=5`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        
+        if (notificationsResponse.ok) {
+          const notificationsData = await notificationsResponse.json();
+          const messagesData = notificationsData.map((notification: any) => ({
+            id: notification.id,
+            student_name: notification.user?.full_name || 'ไม่มีชื่อ',
+            project_title: notification.project?.title || 'ไม่มีโปรเจค',
+            message: notification.message || notification.title,
+            created_at: notification.created_at,
+            is_read: notification.is_read || false,
+          }));
+          setRecentMessages(messagesData);
+        }
+      } catch (err) {
+        console.log('Error loading messages:', err);
+        setRecentMessages([]);
+      }
 
-        setLoading(false);
-      }, 1000);
+      setLoading(false);
     } catch (error) {
       console.error("Error loading advisor data:", error);
       setLoading(false);

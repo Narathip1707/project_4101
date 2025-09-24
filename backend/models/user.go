@@ -1,50 +1,47 @@
 package models
 
 import (
-	"time" // เพิ่ม import time
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID                   string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	Email                string    `gorm:"type:varchar(255);unique;not null" validate:"required,email,endswith=@rumail.ru.ac.th"`
-	PasswordHash         string    `gorm:"type:varchar(255);not null"`
-	FullName             string    `gorm:"type:varchar(255);not null"`
-	StudentID            string    `gorm:"type:varchar(20)"`
-	EmployeeID           string    `gorm:"type:varchar(20)"`
-	Role                 string    `gorm:"type:varchar(20);not null;check:role IN ('student', 'advisor', 'admin')"`
-	Department           string    `gorm:"type:varchar(100);default:'วิทยาการคอมพิวเตอร์'"`
-	Phone                string    `gorm:"type:varchar(20)" validate:"required,min=10,max=10"`
-	IsVerified           bool      `gorm:"default:false"`
-	VerificationToken    string    `gorm:"type:varchar(255)"`
-	PasswordResetToken   string    `gorm:"type:varchar(255)"`
-	PasswordResetExpires time.Time `gorm:"type:timestamp"`
-	ProfileImage         string    `gorm:"type:text"`
-	CreatedAt            time.Time `gorm:"type:timestamp;autoCreateTime"`
-	UpdatedAt            time.Time `gorm:"type:timestamp;autoUpdateTime"`
-	Password             string    `gorm:"-"` // Temporary field for password handling
+	ID                   string     `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	Email                string     `gorm:"type:varchar(255);unique;not null" json:"email"`
+	PasswordHash         string     `gorm:"type:varchar(255);not null" json:"-"`
+	Password             string     `gorm:"-" json:"-"` // Used for input, not stored
+	FullName             string     `gorm:"type:varchar(255);not null;column:full_name" json:"full_name"`
+	StudentID            string     `gorm:"type:varchar(20);column:student_id" json:"student_id,omitempty"`
+	EmployeeID           string     `gorm:"type:varchar(20);column:employee_id" json:"employee_id,omitempty"`
+	Role                 string     `gorm:"type:varchar(20);not null;check:role IN ('student','advisor','admin')" json:"role"`
+	Department           string     `gorm:"type:varchar(100);default:'วิทยาการคอมพิวเตอร์'" json:"department"`
+	Phone                string     `gorm:"type:varchar(20)" json:"phone"`
+	IsVerified           bool       `gorm:"type:boolean;default:false;column:is_verified" json:"is_verified"`
+	VerificationToken    string     `gorm:"type:varchar(255);column:verification_token" json:"-"`
+	PasswordResetToken   string     `gorm:"type:varchar(255);column:password_reset_token" json:"-"`
+	PasswordResetExpires *time.Time `gorm:"type:timestamp;column:password_reset_expires" json:"-"`
+	ProfileImage         string     `gorm:"type:text;column:profile_image" json:"profile_image,omitempty"`
+	CreatedAt            time.Time  `gorm:"type:timestamp;default:CURRENT_TIMESTAMP;column:created_at" json:"created_at"`
+	UpdatedAt            time.Time  `gorm:"type:timestamp;default:CURRENT_TIMESTAMP;column:updated_at" json:"updated_at"`
 
-	// เพิ่ม relationships
-	Student       *Student       `gorm:"foreignKey:UserID"`
-	Advisor       *Advisor       `gorm:"foreignKey:UserID"`
-	ProjectFiles  []ProjectFile  `gorm:"foreignKey:UploadedBy"`
-	Notifications []Notification `gorm:"foreignKey:UserID"`
-	Logs          []Log          `gorm:"foreignKey:UserID"`
+	// Relationships
+	Student *Student `gorm:"foreignKey:UserID" json:"student,omitempty"`
+	Advisor *Advisor `gorm:"foreignKey:UserID" json:"advisor,omitempty"`
 
-	// เพิ่ม soft delete
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	// Soft delete - ไม่ใช้เนื่องจาก schema ไม่มี
+	// DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // BeforeCreate handles password hashing before saving to database
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.Password != "" {
-		hashedPassword, err := HashPassword(u.Password)
+		hashed, err := HashPassword(u.Password)
 		if err != nil {
 			return err
 		}
-		u.PasswordHash = hashedPassword
+		u.PasswordHash = hashed
 		u.Password = ""
 	}
 	return nil
@@ -58,12 +55,10 @@ func HashPassword(password string) (string, error) {
 
 // CheckPasswordHash verifies if the password matches the hash
 func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-// BeforeSave updates UpdatedAt before saving
-func (u *User) BeforeSave(tx *gorm.DB) (err error) {
-	u.UpdatedAt = time.Now()
-	return nil
+// TableName specifies the table name
+func (User) TableName() string {
+	return "users"
 }

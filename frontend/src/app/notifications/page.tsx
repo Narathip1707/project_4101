@@ -26,86 +26,43 @@ export default function Notifications() {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
-      // Mock data - ในอนาคตจะเป็น API Call จริง
-      const mockNotifications: Notification[] = [
-        {
-          id: "1",
-          title: "โครงงานได้รับการอนุมัติ",
-          message: "โครงงาน 'ระบบแนะนำหนังสือด้วย AI' ของคุณได้รับการอนุมัติจากอาจารย์ที่ปรึกษาแล้ว สามารถเริ่มดำเนินการได้",
-          type: "success",
-          isRead: false,
-          createdDate: "2024-02-20T10:30:00Z",
-          relatedTo: {
-            type: "project",
-            id: "3",
-            name: "ระบบแนะนำหนังสือด้วย AI"
-          }
-        },
-        {
-          id: "2",
-          title: "การประชุมกับอาจารย์ที่ปรึกษา",
-          message: "อ.ดร.สมชาย ใจดี ได้นัดหมายการประชุมในวันที่ 25 กุมภาพันธ์ 2567 เวลา 14:00 น. ห้อง CS-201",
-          type: "info",
-          isRead: true,
-          createdDate: "2024-02-18T14:15:00Z",
-          relatedTo: {
-            type: "advisor",
-            name: "อ.ดร.สมชาย ใจดี"
-          }
-        },
-        {
-          id: "3",
-          title: "กำหนดส่งรายงานความก้าวหน้า",
-          message: "กำหนดส่งรายงานความก้าวหน้าโครงงานครั้งที่ 1 ภายในวันที่ 28 กุมภาพันธ์ 2567",
-          type: "warning",
-          isRead: false,
-          createdDate: "2024-02-15T09:00:00Z",
-          relatedTo: {
-            type: "system",
-            name: "ระบบจัดการโครงงาน"
-          }
-        },
-        {
-          id: "4",
-          title: "อัพเดทระบบ",
-          message: "ระบบจะมีการปรับปรุงในวันที่ 22 กุมภาพันธ์ 2567 เวลา 02:00-04:00 น. อาจมีการหยุดให้บริการชั่วคราว",
-          type: "info",
-          isRead: true,
-          createdDate: "2024-02-14T16:45:00Z",
-          relatedTo: {
-            type: "system",
-            name: "ระบบจัดการโครงงาน"
-          }
-        },
-        {
-          id: "5",
-          title: "โครงงานต้องการการแก้ไข",
-          message: "โครงงาน 'ระบบจัดการข้อมูลนักศึกษาออนไลน์' ต้องการการแก้ไขตามข้อเสนอแนะของอาจารย์ที่ปรึกษา",
-          type: "error",
-          isRead: false,
-          createdDate: "2024-02-12T11:20:00Z",
-          relatedTo: {
-            type: "project",
-            id: "1",
-            name: "ระบบจัดการข้อมูลนักศึกษาออนไลน์"
-          }
-        },
-        {
-          id: "6",
-          title: "ยินดีต้อนรับสู่ระบบ",
-          message: "ยินดีต้อนรับเข้าสู่ระบบจัดการโครงงานพิเศษ หากมีข้อสงสัยสามารถติดต่อได้ที่ admin@university.ac.th",
-          type: "info",
-          isRead: true,
-          createdDate: "2024-01-15T08:00:00Z",
-          relatedTo: {
-            type: "system",
-            name: "ระบบจัดการโครงงาน"
-          }
-        }
-      ];
-      setNotifications(mockNotifications);
+      loadNotifications();
     }
   }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${baseUrl}/api/notifications`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const formattedNotifications: Notification[] = data.map((notification: any) => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type || 'info',
+          isRead: notification.is_read || false,
+          createdDate: notification.sent_at || notification.created_at,
+          relatedTo: {
+            type: "system",
+            name: "ระบบจัดการโครงงาน"
+          }
+        }));
+        setNotifications(formattedNotifications);
+      } else {
+        console.error('Failed to load notifications');
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      setNotifications([]);
+    }
+  };
 
   const getTypeColor = (type: Notification["type"]) => {
     switch (type) {

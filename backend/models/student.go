@@ -2,31 +2,26 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Student struct {
-	ID             string  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	UserID         string  `gorm:"type:uuid;not null"`
-	Year           int     `gorm:"not null" validate:"required,min=1,max=4"`
-	GPA            float32 `gorm:"type:decimal(3,2)" validate:"min=0,max=4.00"`
-	AdvisorID      string  `gorm:"type:uuid"`
-	EnrollmentYear int
-	GraduationYear int
-	Status         string         `gorm:"type:varchar(20);default:'active';check:status IN ('active', 'graduated', 'dropped', 'suspended')"`
-	CreatedAt      time.Time      `gorm:"type:timestamp;autoCreateTime"`
-	UpdatedAt      time.Time      `gorm:"type:timestamp;autoUpdateTime"`
-	DeletedAt      gorm.DeletedAt `gorm:"index"`
+	ID             string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	UserID         string    `gorm:"type:uuid;column:user_id" json:"user_id"`
+	Year           int       `gorm:"not null" json:"year"`
+	GPA            *float64  `gorm:"type:decimal(3,2)" json:"gpa,omitempty"`
+	AdvisorID      *string   `gorm:"type:uuid;column:advisor_id" json:"advisor_id,omitempty"`
+	EnrollmentYear *int      `gorm:"column:enrollment_year" json:"enrollment_year,omitempty"`
+	GraduationYear *int      `gorm:"column:graduation_year" json:"graduation_year,omitempty"`
+	Status         string    `gorm:"type:varchar(20);default:'active';check:status IN ('active','graduated','dropped','suspended')" json:"status"`
+	CreatedAt      time.Time `gorm:"type:timestamp;default:CURRENT_TIMESTAMP;column:created_at" json:"created_at"`
+	UpdatedAt      time.Time `gorm:"type:timestamp;default:CURRENT_TIMESTAMP;column:updated_at" json:"updated_at"`
 
-	// เพิ่ม relationships
-	User     *User     `gorm:"foreignKey:UserID"`
-	Advisor  *Advisor  `gorm:"foreignKey:AdvisorID"`
-	Projects []Project `gorm:"foreignKey:StudentID"`
+	// Relationships
+	User     *User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Advisor  *Advisor  `gorm:"foreignKey:AdvisorID" json:"advisor,omitempty"`
+	Projects []Project `gorm:"foreignKey:StudentID" json:"projects,omitempty"`
 }
 
-// BeforeSave updates UpdatedAt before saving
-func (s *Student) BeforeSave(tx *gorm.DB) (err error) {
-	s.UpdatedAt = time.Now()
-	return nil
+func (Student) TableName() string {
+	return "students"
 }

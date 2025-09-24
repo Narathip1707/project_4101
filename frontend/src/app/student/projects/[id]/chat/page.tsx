@@ -39,13 +39,22 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
 
   const loadProjectInfo = async () => {
     try {
-      // Mock data for now
-      setProject({
-        id: id,
-        title: "ระบบจัดการข้อมูลนักศึกษา",
-        advisor_name: "อ.ดร.สมชาย ใจดี",
-        advisor_id: "advisor1",
+      const token = localStorage.getItem("token");
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+      
+      const response = await fetch(`${baseUrl}/api/projects/${id}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
+      
+      if (response.ok) {
+        const projectData = await response.json();
+        setProject({
+          id: projectData.id,
+          title: projectData.title || 'ไม่มีชื่อโปรเจค',
+          advisor_name: projectData.advisor?.user?.full_name || 'ยังไม่ได้กำหนดอาจารย์',
+          advisor_id: projectData.advisor?.id || '',
+        });
+      }
     } catch (error) {
       console.error("Error loading project info:", error);
     }
@@ -53,47 +62,32 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
 
   const loadMessages = async () => {
     try {
-      // Mock messages
-      setMessages([
-        {
-          id: "1",
-          sender_id: "advisor1",
-          sender_name: "อ.ดร.สมชาย ใจดี",
-          sender_role: "advisor",
-          message: "สวัสดีครับ ผมได้ดูรายงานความก้าวหน้าครั้งที่ 1 แล้ว โดยรวมแล้วดีมากครับ แต่มีข้อเสนอแนะเล็กน้อย",
-          created_at: "2024-09-11T10:30:00Z",
-          is_read: true,
-        },
-        {
-          id: "2",
-          sender_id: "student1",
-          sender_name: "นางสาวสมใจ ใจดี",
-          sender_role: "student",
-          message: "ขอบคุณมากครับอาจารย์ ช่วยแนะนำด้วยครับว่าควรปรับปรุงในส่วนไหน",
-          created_at: "2024-09-11T14:15:00Z",
-          is_read: true,
-        },
-        {
-          id: "3",
-          sender_id: "advisor1",
-          sender_name: "อ.ดร.สมชาย ใจดี",
-          sender_role: "advisor",
-          message: "ในส่วนของ Use Case Diagram ควรเพิ่มรายละเอียดของ Actor และ Relationship ให้ชัดเจนมากขึ้น และในส่วนของ Database Design ควรระบุ Primary Key และ Foreign Key ให้ครบถ้วน",
-          created_at: "2024-09-11T15:45:00Z",
-          is_read: true,
-        },
-        {
-          id: "4",
-          sender_id: "student1",
-          sender_name: "นางสาวสมใจ ใจดี",
-          sender_role: "student",
-          message: "เข้าใจแล้วครับ จะแก้ไขตามที่อาจารย์แนะนำ คาดว่าจะส่งเวอร์ชันใหม่ภายในสัปดาห์หน้าครับ",
-          created_at: "2024-09-12T09:20:00Z",
-          is_read: false,
-        },
-      ]);
+      const token = localStorage.getItem("token");
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+      
+      const response = await fetch(`${baseUrl}/api/projects/${id}/messages`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const messagesData = await response.json();
+        const formattedMessages = messagesData.map((msg: any) => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          sender_name: msg.sender?.full_name || msg.sender_name || 'ไม่มีชื่อ',
+          sender_role: msg.sender?.role || (msg.sender_id === user?.id ? 'student' : 'advisor'),
+          message: msg.message || msg.content,
+          created_at: msg.created_at || msg.sent_at,
+          is_read: msg.is_read || false,
+        }));
+        setMessages(formattedMessages);
+      } else {
+        // Fallback to empty array if API fails
+        setMessages([]);
+      }
     } catch (error) {
       console.error("Error loading messages:", error);
+      setMessages([]);
     }
   };
 
@@ -103,36 +97,60 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
 
     setSending(true);
     try {
+      const token = localStorage.getItem("token");
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+      
       const messageData = {
         project_id: id,
         message: newMessage.trim(),
-        sender_role: "student",
+        recipient_id: project?.advisor_id,
       };
 
-      // Mock send message
-      setTimeout(() => {
+      const response = await fetch(`${baseUrl}/api/projects/${id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(messageData)
+      });
+
+      if (response.ok) {
+        const savedMessage = await response.json();
+        const newMsg: Message = {
+          id: savedMessage.id,
+          sender_id: user?.id || savedMessage.sender_id,
+          sender_name: user?.fullName || user?.full_name || "นักศึกษา",
+          sender_role: "student",
+          message: newMessage.trim(),
+          created_at: savedMessage.created_at || new Date().toISOString(),
+          is_read: false,
+        };
+        setMessages(prev => [...prev, newMsg]);
+      } else {
+        // Fallback to local message if API fails
         const mockMessage: Message = {
           id: Date.now().toString(),
           sender_id: user?.id || "student1",
-          sender_name: user?.fullName || "นักศึกษา",
+          sender_name: user?.fullName || user?.full_name || "นักศึกษา",
           sender_role: "student",
           message: newMessage.trim(),
           created_at: new Date().toISOString(),
           is_read: false,
         };
-
         setMessages(prev => [...prev, mockMessage]);
-        setNewMessage("");
-        setSending(false);
-        
-        // Scroll to bottom
-        setTimeout(() => {
-          const chatContainer = document.getElementById("chat-container");
-          if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-          }
-        }, 100);
-      }, 1000);
+      }
+      
+      setNewMessage("");
+      setSending(false);
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        const chatContainer = document.getElementById("chat-container");
+        if (chatContainer) {
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      }, 100);
 
     } catch (error) {
       console.error("Error sending message:", error);
