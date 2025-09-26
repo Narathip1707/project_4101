@@ -97,6 +97,7 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		Description string `json:"description"`
 		Type        string `json:"type"`
 		StudentID   string `json:"student_id"`
+		AdvisorID   string `json:"advisor_id"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
@@ -126,7 +127,7 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 	// Default student ID for testing (in real app, get from JWT token)
 	studentID := input.StudentID
 	if studentID == "" {
-		studentID = "d45e382e-57cf-43c4-b913-fcbf4a168c55" // Use actual student UUID from students table
+		studentID = "734e3ec1-715c-4a8a-9389-38baa4dc84f6" // Use actual student UUID from students table
 	}
 
 	// Create new project
@@ -134,7 +135,12 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		Title:       input.Title,
 		Description: input.Description,
 		StudentID:   studentID,
-		Status:      "proposal", // Use valid status from enum
+		Status:      "pending", // Project starts as pending approval
+	}
+
+	// Add advisor if provided
+	if input.AdvisorID != "" {
+		project.AdvisorID = &input.AdvisorID
 	}
 
 	if err := h.DB.Create(&project).Error; err != nil {
@@ -145,7 +151,7 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 	}
 
 	// Load the created project with relations
-	if err := h.DB.Preload("Student.User").Where("id = ?", project.ID).First(&project).Error; err != nil {
+	if err := h.DB.Preload("Student.User").Preload("Advisor.User").Where("id = ?", project.ID).First(&project).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to load created project",
 		})

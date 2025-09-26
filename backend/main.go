@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -45,9 +46,9 @@ func main() {
 	// Initialize Fiber app
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     getEnv("CORS_ORIGINS", "http://localhost:3000"),
+		AllowOrigins:     "http://localhost:3000,http://localhost:3001",
 		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-		AllowHeaders:     "*",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization,X-Requested-With",
 		AllowCredentials: true,
 	}))
 
@@ -85,6 +86,12 @@ func main() {
 	app.Post("/api/projects", projectHandler.CreateProject)
 	app.Get("/api/projects/:id", projectHandler.GetProject)
 	app.Get("/api/projects/:id/files", projectHandler.GetProjectFiles)
+
+	// Advisor endpoints
+	app.Get("/api/advisors", getAdvisorsHandler)
+	app.Get("/api/advisors/pending-projects", getPendingProjectsHandler)
+	app.Post("/api/advisors/projects/:id/approve", approveProjectHandler)
+	app.Post("/api/advisors/projects/:id/reject", rejectProjectHandler)
 
 	// File endpoints
 	app.Post("/api/projects/:id/files", fileHandler.UploadFile)
@@ -302,6 +309,127 @@ func getEnv(k, d string) string {
 		return v
 	}
 	return d
+}
+
+func getAdvisorsHandler(c *fiber.Ctx) error {
+	var advisors []models.Advisor
+
+	// Get all advisors with their user information
+	if err := db.Preload("User").Find(&advisors).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error":   "Failed to fetch advisors",
+			"details": err.Error(),
+		})
+	}
+
+	return c.JSON(advisors)
+}
+
+func getPendingProjectsHandler(c *fiber.Ctx) error {
+	// TODO: In real app, get advisor_id from JWT token
+	advisorID := c.Query("advisor_id")
+	if advisorID == "" {
+		// For testing purposes, get all pending projects
+		var projects []models.Project
+		if err := db.Preload("Student.User").Where("status = ?", "pending").Find(&projects).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error": "Failed to fetch pending projects",
+			})
+		}
+		return c.JSON(projects)
+	}
+
+	var projects []models.Project
+	if err := db.Preload("Student.User").Where("advisor_id = ? AND status = ?", advisorID, "pending").Find(&projects).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to fetch pending projects",
+		})
+	}
+
+	return c.JSON(projects)
+}
+
+func approveProjectHandler(c *fiber.Ctx) error {
+	projectID := c.Params("id")
+
+	var input struct {
+		Comment string `json:"comment"`
+	}
+
+	if err := c.BodyParser(&input); err == nil {
+		// Comment is optional
+	}
+
+	now := time.Now()
+	result := db.Model(&models.Project{}).
+		Where("id = ?", projectID).
+		Updates(map[string]interface{}{
+			"status":          "approved",
+			"advisor_comment": input.Comment,
+			"approved_at":     &now,
+			"updated_at":      &now,
+		})
+
+	if result.Error != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to approve project",
+		})
+	}
+
+	if result.RowsAffected == 0 {
+		return c.Status(404).JSON(fiber.Map{
+			"error": "Project not found",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Project approved successfully",
+	})
+}
+
+func rejectProjectHandler(c *fiber.Ctx) error {
+	projectID := c.Params("id")
+
+	var input struct {
+		Comment string `json:"comment"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	if input.Comment == "" {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Comment is required for rejection",
+		})
+	}
+
+	now := time.Now()
+	result := db.Model(&models.Project{}).
+		Where("id = ?", projectID).
+		Updates(map[string]interface{}{
+			"status":          "rejected",
+			"advisor_comment": input.Comment,
+			"updated_at":      &now,
+		})
+
+	if result.Error != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to reject project",
+		})
+	}
+
+	if result.RowsAffected == 0 {
+		return c.Status(404).JSON(fiber.Map{
+			"error": "Project not found",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Project rejected successfully",
+	})
 }
 
 func isValidEmail(email string) bool {
