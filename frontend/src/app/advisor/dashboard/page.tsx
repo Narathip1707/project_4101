@@ -179,6 +179,33 @@ export default function AdvisorDashboard() {
           <p className="mt-2 text-gray-600">ยินดีต้อนรับ {user?.fullName}</p>
         </div>
 
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">การดำเนินการด่วน</h3>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/advisor/pending-projects"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                📋 ดูโปรเจคที่รอการอนุมัติ
+              </Link>
+              <Link
+                href="/advisor/files/review"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                📄 ตรวจสอบไฟล์
+              </Link>
+              <Link
+                href="/advisor/students"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                👥 จัดการนักศึกษา
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
