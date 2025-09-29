@@ -39,6 +39,13 @@ export default function AdvisorDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+
     const userInfo = getUserInfo();
     setUser(userInfo);
     loadAdvisorData();
@@ -48,34 +55,48 @@ export default function AdvisorDashboard() {
     try {
       const token = localStorage.getItem("token");
       const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
       
-      // Load students with projects (projects where advisor is current user)
+      // Load projects assigned to this advisor
       try {
-        const projectsResponse = await fetch(`${baseUrl}/api/projects?advisor=true`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        const projectsResponse = await fetch(`${baseUrl}/api/projects`, {
+          headers
         });
         
         if (projectsResponse.ok) {
           const projectsData = await projectsResponse.json();
-          const studentsWithProjects = projectsData.map((project: any) => ({
-            id: `student_${project.student_id}`,
+          // Filter projects where this user is the advisor (will be handled by backend based on JWT)
+          const studentsWithProjects = projectsData.slice(0, 5).map((project: any) => ({
+            id: project.id,
             name: project.student?.user?.full_name || 'ไม่มีชื่อ',
-            student_id: project.student?.student_id || 'ไม่มีรหัส',
+            student_id: project.student?.user?.student_id || 'ไม่มีรหัส',
             project_title: project.title || 'ไม่มีชื่อโปรเจค',
-            project_status: project.status || 'proposal',
+            project_status: project.status || 'pending',
             last_activity: project.updated_at || project.created_at,
           }));
           setStudents(studentsWithProjects);
+        } else if (projectsResponse.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
         }
       } catch (err) {
         console.log('Error loading students:', err);
         setStudents([]);
       }
 
-      // Load pending files for review
+      // Load recent files (using the files/recent endpoint we created)
       try {
-        const filesResponse = await fetch(`${baseUrl}/api/files?status=pending&advisor=true`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        const filesResponse = await fetch(`${baseUrl}/api/files/recent?limit=5`, {
+          headers
         });
         
         if (filesResponse.ok) {
@@ -85,10 +106,13 @@ export default function AdvisorDashboard() {
             file_name: file.file_name || 'ไม่มีชื่อไฟล์',
             student_name: file.project?.student?.user?.full_name || 'ไม่มีชื่อ',
             project_title: file.project?.title || 'ไม่มีโปรเจค',
-            uploaded_at: file.uploaded_at,
+            uploaded_at: file.created_at,
             file_category: file.file_category || 'general',
           }));
           setPendingFiles(pendingFilesData);
+        } else if (filesResponse.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
         }
       } catch (err) {
         console.log('Error loading pending files:', err);
@@ -98,7 +122,7 @@ export default function AdvisorDashboard() {
       // Load recent notifications/messages
       try {
         const notificationsResponse = await fetch(`${baseUrl}/api/notifications?limit=5`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers
         });
         
         if (notificationsResponse.ok) {

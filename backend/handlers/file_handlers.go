@@ -203,3 +203,25 @@ func (h *FileHandler) ReviewFile(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "File status updated successfully"})
 }
+
+// GetRecentFiles - GET /api/files/recent
+func (h *FileHandler) GetRecentFiles(c *fiber.Ctx) error {
+	limit := c.QueryInt("limit", 5)
+	if limit > 50 {
+		limit = 50 // Maximum 50 files
+	}
+
+	var files []models.ProjectFile
+	err := h.DB.Preload("Project").
+		Order("created_at DESC").
+		Limit(limit).
+		Find(&files).Error
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to fetch recent files",
+		})
+	}
+
+	return c.JSON(files)
+}

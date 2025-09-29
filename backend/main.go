@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/handlers"
+	"backend/middlewares"
 	"backend/models"
 	"fmt"
 	"log"
@@ -59,6 +60,8 @@ func main() {
 	projectHandler := handlers.NewProjectHandler(db)
 	fileHandler := handlers.NewFileHandler(db)
 	notificationHandler := handlers.NewNotificationHandler(db)
+	adminHandler := handlers.NewAdminHandler(db)
+	advisorStudentHandler := handlers.NewAdvisorStudentHandler(db)
 
 	// Root route
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -77,35 +80,67 @@ func main() {
 		})
 	})
 
-	// Auth endpoints
+	// Auth endpoints (public)
 	app.Post("/api/signup", signupHandler)
 	app.Post("/api/login", loginHandler)
 
-	// Project endpoints
-	app.Get("/api/projects", projectHandler.GetProjects)
-	app.Post("/api/projects", projectHandler.CreateProject)
-	app.Get("/api/projects/:id", projectHandler.GetProject)
-	app.Get("/api/projects/:id/files", projectHandler.GetProjectFiles)
-
-	// Advisor endpoints
+	// Public endpoints
 	app.Get("/api/advisors", getAdvisorsHandler)
-	app.Get("/api/advisors/pending-projects", getPendingProjectsHandler)
-	app.Post("/api/advisors/projects/:id/approve", approveProjectHandler)
-	app.Post("/api/advisors/projects/:id/reject", rejectProjectHandler)
+
+	// Protected endpoints (require authentication)
+	protected := app.Group("/api")
+	protected.Use(middlewares.JWTMiddleware)
+
+	// Project endpoints
+	protected.Get("/projects", projectHandler.GetProjects)
+	protected.Post("/projects", projectHandler.CreateProject)
+	protected.Get("/projects/:id", projectHandler.GetProject)
+	protected.Get("/projects/:id/files", projectHandler.GetProjectFiles)
+
+	// Advisor endpoints (advisor/admin only)
+	advisorRoutes := protected.Group("/advisors")
+	advisorRoutes.Use(middlewares.AdvisorMiddleware)
+	advisorRoutes.Get("/pending-projects", getPendingProjectsHandler)
+	advisorRoutes.Post("/projects/:id/approve", approveProjectHandler)
+	advisorRoutes.Post("/projects/:id/reject", rejectProjectHandler)
+
+	// Student management endpoints
+	advisorRoutes.Get("/students", advisorStudentHandler.GetAdvisorStudents)
+
+	// Student detail and update endpoints
+	protected.Get("/students/:id", advisorStudentHandler.GetStudentDetail)
+	protected.Put("/students/:id", advisorStudentHandler.UpdateStudent)
+
+	// Project progress and status endpoints
+	protected.Post("/projects/:id/progress", advisorStudentHandler.UpdateProjectProgress)
+	protected.Put("/projects/:id/status", advisorStudentHandler.UpdateProjectStatus)
+	protected.Post("/projects/:id/milestones", advisorStudentHandler.AddProjectMilestone)
 
 	// File endpoints
-	app.Post("/api/projects/:id/files", fileHandler.UploadFile)
-	app.Get("/api/files/:id/download", fileHandler.DownloadFile)
-	app.Patch("/api/files/:id/review", fileHandler.ReviewFile)
+	protected.Post("/projects/:id/files", fileHandler.UploadFile)
+	protected.Get("/files/recent", fileHandler.GetRecentFiles)
+	protected.Get("/files/:id/download", fileHandler.DownloadFile)
+	protected.Patch("/files/:id/review", fileHandler.ReviewFile)
 
 	// Notification endpoints
-	app.Get("/api/notifications", notificationHandler.GetNotifications)
-	app.Patch("/api/notifications/:id/read", notificationHandler.MarkAsRead)
+	protected.Get("/notifications", notificationHandler.GetNotifications)
+	protected.Patch("/notifications/:id/read", notificationHandler.MarkAsRead)
 
 	// Profile endpoints
-	app.Get("/api/profile", profileHandler)
-	app.Put("/api/profile", updateProfileHandler)
-	app.Patch("/api/profile", updateProfileHandler)
+	protected.Get("/profile", profileHandler)
+	protected.Put("/profile", updateProfileHandler)
+	protected.Patch("/profile", updateProfileHandler)
+
+	// Admin endpoints (admin only)
+	adminRoutes := protected.Group("/admin")
+	adminRoutes.Use(middlewares.AdminMiddleware)
+	adminRoutes.Get("/stats", adminHandler.GetUserStats)
+	adminRoutes.Get("/users", adminHandler.GetUsers)
+	adminRoutes.Get("/user/:id", adminHandler.GetUser)
+	adminRoutes.Post("/users", adminHandler.CreateUser)
+	adminRoutes.Put("/users/:id", adminHandler.UpdateUser)
+	adminRoutes.Delete("/users/:id", adminHandler.DeleteUser)
+	adminRoutes.Post("/users/:id/reset-password", adminHandler.ResetPassword)
 
 	// Starting server
 	serverPort := getEnv("PORT", "8081")
@@ -185,26 +220,44 @@ func signupHandler(c *fiber.Ctx) error {
 }
 
 func loginHandler(c *fiber.Ctx) error {
+	log.Printf("Login request received")
 	var input struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		log.Printf("Body parser error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
+	log.Printf("Login attempt for email: %s", input.Email)
+
 	if input.Email == "" || input.Password == "" {
+		log.Printf("Missing email or password")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Email and password are required"})
 	}
 
 	var user models.User
 	if err := db.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		log.Printf("User not found for email: %s, error: %v", input.Email, err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
 
+	log.Printf("User found: ID=%s, Email=%s, HasHash=%v", user.ID, user.Email, len(user.PasswordHash) > 0)
+
+	// Use bcrypt to check password
 	if !models.CheckPasswordHash(input.Password, user.PasswordHash) {
+		log.Printf("Password hash check failed for user: %s", user.Email)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+	}
+
+	log.Printf("Login successful for user: %s", user.Email)
+
+	// Generate JWT token
+	token, err := models.GenerateJWT(user)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate token"})
 	}
 
 	// Don't return password hash
@@ -212,29 +265,32 @@ func loginHandler(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "Login successful",
+		"token":   token,
 		"user":    user,
 	})
 }
 
 func profileHandler(c *fiber.Ctx) error {
-	// Try to get user_id from query parameter first, then from mock token logic
-	userId := c.Query("user_id")
-
-	// If no user_id provided, try to extract from Authorization header
-	if userId == "" {
-		// Use the actual admin user UUID from database
-		userId = "41b805d8-f8c0-4af6-974b-84f03aeafdb7"
+	// Get user from JWT token (set by middleware)
+	user := c.Locals("user")
+	if user == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Authentication required"})
 	}
 
-	var user models.User
-	if err := db.Preload("Student").Preload("Advisor").First(&user, "id = ?", userId).Error; err != nil {
+	claims, ok := user.(*models.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token"})
+	}
+
+	var userRecord models.User
+	if err := db.Preload("Student").Preload("Advisor").First(&userRecord, "id = ?", claims.UserID).Error; err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	// Don't return password hash
-	user.PasswordHash = ""
+	userRecord.PasswordHash = ""
 
-	return c.JSON(user)
+	return c.JSON(userRecord)
 }
 
 func updateProfileHandler(c *fiber.Ctx) error {
