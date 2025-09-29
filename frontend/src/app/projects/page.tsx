@@ -1,0 +1,228 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  status: "draft" | "submitted" | "approved" | "rejected" | "completed";
+  advisor: string;
+  createdDate: string;
+  lastModified: string;
+  members: string[];
+}
+
+export default function Projects() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [filter, setFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+      // Mock data - ในอนาคตจะเป็น API Call จริง
+      const mockProjects: Project[] = [
+        {
+          id: "1",
+          title: "ระบบจัดการข้อมูลนักศึกษาออนไลน์",
+          description: "พัฒนาระบบเว็บแอปพลิเคชันสำหรับจัดการข้อมูลนักศึกษา รวมถึงการลงทะเบียนเรียน การดูผลการเรียน และการติดต่อสื่อสาร",
+          status: "submitted",
+          advisor: "อ.ดร.สมชาย ใจดี",
+          createdDate: "2024-01-15",
+          lastModified: "2024-02-01",
+          members: ["นาย ทดสอบ ระบบ", "นาย สมศักดิ์ ดีมาก"]
+        },
+        {
+          id: "2",
+          title: "แอปพลิเคชันจัดการคลังสินค้า",
+          description: "สร้างแอปพลิเคชันมือถือสำหรับจัดการสต็อกสินค้า ติดตามการเข้า-ออกของสินค้า และสร้างรายงานสรุป",
+          status: "draft",
+          advisor: "อ.ดร.วิไล เก่งมาก",
+          createdDate: "2024-02-10",
+          lastModified: "2024-02-20",
+          members: ["นาย ทดสอบ ระบบ"]
+        },
+        {
+          id: "3",
+          title: "ระบบแนะนำหนังสือด้วย AI",
+          description: "พัฒนาระบบแนะนำหนังสือโดยใช้เทคนิค Machine Learning เพื่อวิเคราะห์ความชอบของผู้ใช้และแนะนำหนังสือที่เหมาะสม",
+          status: "approved",
+          advisor: "อ.ดร.ปัญญา เจ้าปัญญา",
+          createdDate: "2023-11-01",
+          lastModified: "2024-01-15",
+          members: ["นาย ทดสอบ ระบบ", "นาง สมหญิง เก่งมาก", "นาย วิทยา รู้ดี"]
+        }
+      ];
+      setProjects(mockProjects);
+    }
+  }, []);
+
+  const getStatusColor = (status: Project["status"]) => {
+    switch (status) {
+      case "draft": return "bg-gray-500";
+      case "submitted": return "bg-yellow-500";
+      case "approved": return "bg-green-500";
+      case "rejected": return "bg-red-500";
+      case "completed": return "bg-blue-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const getStatusText = (status: Project["status"]) => {
+    switch (status) {
+      case "draft": return "ร่าง";
+      case "submitted": return "ส่งแล้ว";
+      case "approved": return "อนุมัติ";
+      case "rejected": return "ไม่อนุมัติ";
+      case "completed": return "เสร็จสิ้น";
+      default: return "ไม่ทราบสถานะ";
+    }
+  };
+
+  const filteredProjects = filter === "all" 
+    ? projects 
+    : projects.filter(project => project.status === filter);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center animate-scaleIn">
+          <h1 className="text-3xl font-bold mb-4 text-black animate-fadeInUp animate-delay-200">กรุณาเข้าสู่ระบบ</h1>
+          <p className="text-gray-600 mb-6 animate-fadeInUp animate-delay-400">คุณต้องเข้าสู่ระบบเพื่อดูโครงงาน</p>
+          <Link href="/login">
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 animate-fadeInUp animate-delay-600 hover:shadow-lg">
+              เข้าสู่ระบบ
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-[rgba(13,33,57,255)] p-10 animate-slideInFromTop">
+        <h1 className="text-3xl font-bold text-center mb-2 text-white animate-fadeInUp animate-delay-200">โครงงานของฉัน</h1>
+        <p className="text-center text-white animate-fadeInUp animate-delay-400">จัดการและติดตามโครงงานพิเศษของคุณ</p>
+      </div>
+
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Action Bar */}
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6 animate-fadeInUp animate-delay-600 hover:shadow-xl transition-all duration-300">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4 animate-fadeInLeft animate-delay-700">
+              <h2 className="text-xl font-bold text-black">รายการโครงงาน</h2>
+              <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-300 transition-colors">
+                ทั้งหมด {projects.length} โครงงาน
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-4 animate-fadeInRight animate-delay-800">
+              {/* Filter */}
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black shadow-sm hover:shadow-md transition-shadow"
+              >
+                <option value="all">ทั้งหมด</option>
+                <option value="draft">ร่าง</option>
+                <option value="submitted">ส่งแล้ว</option>
+                <option value="approved">อนุมัติ</option>
+                <option value="rejected">ไม่อนุมัติ</option>
+                <option value="completed">เสร็จสิ้น</option>
+              </select>
+              
+              {/* New Project Button */}
+              <Link href="/projects/new">
+                <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 hover:scale-105 transition-all duration-200 hover:shadow-lg">
+                  + สร้างโครงงานใหม่
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Projects Grid */}
+        {filteredProjects.length === 0 ? (
+          <div className="bg-white shadow-lg rounded-lg p-12 text-center animate-scaleIn animate-delay-900 hover:shadow-xl transition-shadow">
+            <div className="text-6xl mb-4 animate-bounce animate-delay-1000">📚</div>
+            <h3 className="text-xl font-semibold text-black mb-2 animate-fadeInUp animate-delay-1100">ไม่มีโครงงาน</h3>
+            <p className="text-gray-600 mb-6 animate-fadeInUp animate-delay-1200">
+              {filter === "all" 
+                ? "คุณยังไม่มีโครงงานเลย เริ่มสร้างโครงงานแรกของคุณกันเลย!" 
+                : `ไม่มีโครงงานที่มีสถานะ "${getStatusText(filter as Project["status"])}"`}
+            </p>
+            <Link href="/projects/new">
+              <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 animate-fadeInUp animate-delay-1300 hover:shadow-lg">
+                สร้างโครงงานใหม่
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredProjects.map((project, index) => (
+              <div key={project.id} className={`bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 animate-fadeInUp animate-delay-${900 + index * 100}`}>
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-xl font-bold text-black mb-2 flex-1 hover:text-blue-600 transition-colors">{project.title}</h3>
+                  <span className={`${getStatusColor(project.status)} text-white px-3 py-1 rounded-full text-sm ml-4 hover:scale-110 transition-transform`}>
+                    {getStatusText(project.status)}
+                  </span>
+                </div>
+                
+                <p className="text-gray-600 mb-4 line-clamp-3">{project.description}</p>
+                
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span className="font-medium mr-2">อาจารย์ที่ปรึกษา:</span>
+                    <span>{project.advisor}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span className="font-medium mr-2">สมาชิก:</span>
+                    <span>{project.members.join(", ")}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span className="font-medium mr-2">วันที่สร้าง:</span>
+                    <span>{new Date(project.createdDate).toLocaleDateString("th-TH")}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span className="font-medium mr-2">แก้ไขล่าสุด:</span>
+                    <span>{new Date(project.lastModified).toLocaleDateString("th-TH")}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Link href={`/projects/${project.id}`} className="flex-1">
+                    <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200">
+                      ดูรายละเอียด
+                    </button>
+                  </Link>
+                  <Link href={`/projects/${project.id}/edit`}>
+                    <button className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 hover:scale-105 transition-all duration-200">
+                      แก้ไข
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Back to Home */}
+        <div className="text-center mt-8 animate-fadeInUp animate-delay-1400">
+          <Link href="/">
+            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 hover:shadow-lg">
+              กลับสู่หน้าหลัก
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
