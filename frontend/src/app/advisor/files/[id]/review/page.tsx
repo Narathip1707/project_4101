@@ -26,24 +26,53 @@ export default function FileReview({ params }: { params: { id: string } }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     loadFileDetails();
-  }, [id]);
+  }, [id, router]);
 
   const loadFileDetails = async () => {
     try {
-      // Mock data for now
-      setFile({
-        id: id,
-        file_name: "รายงานความก้าวหน้าครั้งที่ 2.pdf",
-        file_size: 2048000,
-        file_category: "progress_report",
-        uploaded_at: "2024-09-12T09:15:00Z",
-        student_name: "นางสาวสมใจ ใจดี",
-        student_id: "6401234567",
-        project_title: "ระบบจัดการข้อมูลนักศึกษา",
-        project_id: "proj1",
-        current_status: "pending",
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      const response = await fetch(`http://localhost:8081/api/files/${id}`, {
+        headers
       });
+
+      if (response.ok) {
+        const fileData = await response.json();
+        setFile({
+          id: fileData.id,
+          file_name: fileData.file_name || 'ไม่มีชื่อไฟล์',
+          file_size: fileData.file_size || 0,
+          file_category: fileData.file_category || 'general',
+          uploaded_at: fileData.created_at,
+          student_name: fileData.project?.student?.user?.full_name || 'ไม่มีชื่อ',
+          student_id: fileData.project?.student?.user?.student_id || 'ไม่มีรหัส',
+          project_title: fileData.project?.title || 'ไม่มีโปรเจค',
+          project_id: fileData.project?.id || '',
+          current_status: fileData.file_status || 'pending',
+          previous_comments: fileData.description || ''
+        });
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        router.push('/login');
+      } else {
+        console.error('Failed to load file details');
+      }
     } catch (error) {
       console.error("Error loading file details:", error);
     }
@@ -55,19 +84,36 @@ export default function FileReview({ params }: { params: { id: string } }) {
 
     setSubmitting(true);
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
       const reviewData = {
-        file_id: id,
         status: decision,
-        comments: comments.trim(),
-        reviewed_at: new Date().toISOString(),
+        comments: comments.trim()
       };
 
-      // Mock API call
-      setTimeout(() => {
-        console.log("Review submitted:", reviewData);
+      const response = await fetch(`http://localhost:8081/api/files/${id}/review`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reviewData)
+      });
+
+      if (response.ok) {
         setSubmitting(false);
         router.push("/advisor/dashboard");
-      }, 1500);
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        router.push('/login');
+      } else {
+        console.error('Failed to submit review');
+        setSubmitting(false);
+      }
 
     } catch (error) {
       console.error("Error submitting review:", error);

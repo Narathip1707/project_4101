@@ -49,41 +49,72 @@ export default function StudentDashboard() {
       const token = localStorage.getItem("token");
       const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
       
-      // Load real projects data
-      const projectsResponse = await fetch(`${baseUrl}/api/projects?limit=5`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      if (!token) {
+        console.error("No authentication token found");
+        setLoading(false);
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      
+      // Load student's projects data
+      const projectsResponse = await fetch(`${baseUrl}/api/projects`, {
+        headers
       });
       
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
-        const formattedProjects = projectsData.map((project: any) => ({
+        // Filter projects for current student (will be handled by backend based on JWT)
+        const formattedProjects = projectsData.slice(0, 5).map((project: any) => ({
           id: project.id,
-          title: project.title || 'ไม่มีชื่อโปรเจค',
+          title: project.title || 'ไม่มีชื่อโครงงาน',
           description: project.description || 'ไม่มีคำอธิบาย',
-          status: project.status || 'proposal',
-          advisor_name: project.advisor?.user?.full_name || 'ยังไม่ได้กำหนดอาจารย์',
+          status: project.status || 'pending',
+          advisor_name: project.advisor?.user?.full_name || 'ยังไม่ได้กำหนดอาจารย์ที่ปรึกษา',
           start_date: project.start_date || project.created_at,
+          end_date: project.expected_end_date,
+          grade: project.grade
         }));
         setProjects(formattedProjects);
       } else {
-        // Fallback to empty array if API fails
+        console.error("Failed to fetch projects:", projectsResponse.status);
         setProjects([]);
       }
       
-      // Load recent files - for now, use empty array since we need specific user's files
-      // TODO: Add API endpoint for user's recent files
-      setRecentFiles([]);
+      // Load recent files
+      try {
+        const filesResponse = await fetch(`${baseUrl}/api/files/recent?limit=5`, {
+          headers
+        });
+        
+        if (filesResponse.ok) {
+          const filesData = await filesResponse.json();
+          setRecentFiles(filesData);
+        } else {
+          setRecentFiles([]);
+        }
+      } catch (error) {
+        console.error("Error loading files:", error);
+        setRecentFiles([]);
+      }
       
       // Load notifications
-      const notificationsResponse = await fetch(`${baseUrl}/api/notifications?limit=5`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
-      
-      if (notificationsResponse.ok) {
-        const notificationsData = await notificationsResponse.json();
-        setNotifications(notificationsData);
-      } else {
-        // Fallback to empty array
+      try {
+        const notificationsResponse = await fetch(`${baseUrl}/api/notifications?limit=5`, {
+          headers
+        });
+        
+        if (notificationsResponse.ok) {
+          const notificationsData = await notificationsResponse.json();
+          setNotifications(notificationsData || []);
+        } else {
+          setNotifications([]);
+        }
+      } catch (error) {
+        console.error("Error loading notifications:", error);
         setNotifications([]);
       }
       

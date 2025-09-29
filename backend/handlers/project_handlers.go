@@ -95,9 +95,11 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 	var input struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
+		Category    string `json:"category"`
+		DueDate     string `json:"due_date"`
+		AdvisorID   string `json:"advisor_id"`
 		Type        string `json:"type"`
 		StudentID   string `json:"student_id"`
-		AdvisorID   string `json:"advisor_id"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
@@ -113,9 +115,9 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		})
 	}
 
-	if input.Description == "" {
+	if input.AdvisorID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Description is required",
+			"error": "Advisor is required",
 		})
 	}
 
@@ -127,7 +129,7 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 	// Default student ID for testing (in real app, get from JWT token)
 	studentID := input.StudentID
 	if studentID == "" {
-		studentID = "734e3ec1-715c-4a8a-9389-38baa4dc84f6" // Use actual student UUID from students table
+		studentID = "4a205330-6ae5-4816-8ab7-6736d1ac9002" // Use actual student UUID from students table
 	}
 
 	// Create new project

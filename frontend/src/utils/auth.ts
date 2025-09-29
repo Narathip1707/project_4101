@@ -26,3 +26,14 @@ export const getUserInfo = () => {
   const userInfo = localStorage.getItem("userInfo");
   return userInfo ? JSON.parse(userInfo) : null;
 };
+
+export const getToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
+};
+
+// Helper to create Authorization header
+export const getAuthHeaders = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};

@@ -36,16 +36,16 @@ export default function Login() {
       // Debug: แสดงข้อมูลที่ได้จาก backend
       console.log("Login response data:", data);
       
-      // ตรวจสอบว่า backend ส่งข้อมูล user มาหรือไม่
-      if (!data.user) {
-        throw new Error("No user data received from backend");
+      // ตรวจสอบว่า backend ส่งข้อมูล user และ token มาหรือไม่
+      if (!data.user || !data.token) {
+        throw new Error("No user data or token received from backend");
       }
       
-      // บันทึกข้อมูล login และ redirect ตาม role (ใช้ข้อมูลจาก backend เท่านั้น)
+      // บันทึกข้อมูล login และ redirect ตาม role (ใช้ JWT token จริง)
       const userData = data.user;
       console.log("User data for login:", userData);
       
-      login("dummy-token", userData);
+      login(data.token, userData);
       
       // Redirect ตาม role
       console.log("Redirecting based on role:", userData.role);

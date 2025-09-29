@@ -182,11 +182,13 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
 ('allowed_file_types', 'pdf,doc,docx,ppt,pptx,zip,rar', 'ประเภทไฟล์ที่อนุญาต'),
 ('notification_email_enabled', 'true', 'เปิดใช้งานการแจ้งเตือนผ่าน Email');
 
-INSERT INTO users (email, password_hash, full_name, role, is_verified) VALUES
-('admin@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'ผู้ดูแลระบบ', 'admin', TRUE),
-('advisor1@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'ผศ.ดร.สมชาย วิทยาคอม', 'advisor', TRUE),
-('advisor2@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'รศ.ดร.สมศรี เทคโนโลยี', 'advisor', TRUE),
-('advisor3@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'อ.ดร.วิชาญ โปรแกรม', 'advisor', TRUE);
+INSERT INTO users (email, password_hash, full_name, role, is_verified, student_id) VALUES
+('admin@rumail.ru.ac.th', '$2a$10$ZMug6Ajy03J14alMl9/SFO6azhvL5fMLTfXQjYHl0tgUY1IAKP4GK', 'ผู้ดูแลระบบ', 'admin', TRUE, NULL),
+('advisor1@rumail.ru.ac.th', '$2a$10$aNAqEY0fUm3mlovQ2SNaxuu8L.VNFc8fXPxkn18kOzWZMh1jRQBku', 'ผศ.ดร.สมชาย วิทยาคอม', 'advisor', TRUE, NULL),
+('advisor2@rumail.ru.ac.th', '$2a$10$aNAqEY0fUm3mlovQ2SNaxuu8L.VNFc8fXPxkn18kOzWZMh1jRQBku', 'รศ.ดร.สมศรี เทคโนโลยี', 'advisor', TRUE, NULL),
+('advisor3@rumail.ru.ac.th', '$2a$10$aNAqEY0fUm3mlovQ2SNaxuu8L.VNFc8fXPxkn18kOzWZMh1jRQBku', 'อ.ดร.วิชาญ โปรแกรม', 'advisor', TRUE, NULL),
+('student1@rumail.ru.ac.th', '$2a$10$aNAqEY0fUm3mlovQ2SNaxuu8L.VNFc8fXPxkn18kOzWZMh1jRQBku', 'นางสาวสมหญิง ใจดี', 'student', TRUE, '6504016665'),
+('student2@rumail.ru.ac.th', '$2a$10$aNAqEY0fUm3mlovQ2SNaxuu8L.VNFc8fXPxkn18kOzWZMh1jRQBku', 'นายสมชาย รักเรียน', 'student', TRUE, '6504016666');
 
 -- Insert sample advisors
 INSERT INTO advisors (user_id, title, specialization, research_interests, max_students) VALUES
@@ -199,6 +201,11 @@ INSERT INTO advisors (user_id, title, specialization, research_interests, max_st
 ((SELECT id FROM users WHERE email = 'advisor3@rumail.ru.ac.th'), 'อ.ดร.', 
  ARRAY['Mobile Development', 'Game Development', 'UI/UX'], 
  'การพัฒนาแอปพลิเคชันมือถือ, การออกแบบเกม', 5);
+
+-- Insert sample students
+INSERT INTO students (user_id, year, gpa, status) VALUES
+((SELECT id FROM users WHERE email = 'student1@rumail.ru.ac.th'), 4, 3.25, 'active'),
+((SELECT id FROM users WHERE email = 'student2@rumail.ru.ac.th'), 3, 3.50, 'active');
 
 -- Insert sample notifications
 INSERT INTO notifications (user_id, title, message, type, priority, is_read) VALUES

@@ -22,12 +22,39 @@ export default function PendingProjectsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+      return;
+    }
+    loadPendingProjects();
+  }, []);
+
   const loadPendingProjects = async () => {
     try {
-      const response = await fetch('http://localhost:8081/api/advisors/pending-projects')
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      const response = await fetch('http://localhost:8081/api/advisors/pending-projects', {
+        headers
+      });
+      
       if (response.ok) {
         const data = await response.json()
         setProjects(data)
+      } else if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
       } else {
         setError('ไม่สามารถโหลดรายการโปรเจคได้')
       }
@@ -40,9 +67,16 @@ export default function PendingProjectsPage() {
 
   const handleApprove = async (projectId: string, comment: string = '') => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
       const response = await fetch(`http://localhost:8081/api/advisors/projects/${projectId}/approve`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ comment })
@@ -67,9 +101,16 @@ export default function PendingProjectsPage() {
     }
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
       const response = await fetch(`http://localhost:8081/api/advisors/projects/${projectId}/reject`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ comment })
@@ -87,9 +128,7 @@ export default function PendingProjectsPage() {
     }
   }
 
-  useEffect(() => {
-    loadPendingProjects()
-  }, [])
+
 
   if (loading) {
     return (
