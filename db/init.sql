@@ -64,7 +64,9 @@ CREATE TABLE projects (
     methodology TEXT,
     expected_outcome TEXT,
     keywords TEXT[],
-    status VARCHAR(20) DEFAULT 'proposal' CHECK (status IN ('proposal', 'approved', 'in_progress', 'completed', 'cancelled')),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'in_progress', 'completed', 'cancelled')),
+    advisor_comment TEXT,
+    approved_at TIMESTAMP,
     start_date DATE,
     expected_end_date DATE,
     actual_end_date DATE,
@@ -181,7 +183,22 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
 ('notification_email_enabled', 'true', 'เปิดใช้งานการแจ้งเตือนผ่าน Email');
 
 INSERT INTO users (email, password_hash, full_name, role, is_verified) VALUES
-('admin@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'ผู้ดูแลระบบ', 'admin', TRUE);
+('admin@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'ผู้ดูแลระบบ', 'admin', TRUE),
+('advisor1@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'ผศ.ดร.สมชาย วิทยาคอม', 'advisor', TRUE),
+('advisor2@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'รศ.ดร.สมศรี เทคโนโลยี', 'advisor', TRUE),
+('advisor3@rumail.ru.ac.th', '$2a$10$8K1p/a0dqbQiuiO2ARVAve4FyCPAlbqULpTyGVWi1Pzt.Wz6xvJHS', 'อ.ดร.วิชาญ โปรแกรม', 'advisor', TRUE);
+
+-- Insert sample advisors
+INSERT INTO advisors (user_id, title, specialization, research_interests, max_students) VALUES
+((SELECT id FROM users WHERE email = 'advisor1@rumail.ru.ac.th'), 'ผศ.ดร.', 
+ ARRAY['Web Development', 'Database Systems', 'Software Engineering'], 
+ 'การพัฒนาเว็บแอปพลิเคชัน, ระบบฐานข้อมูล', 8),
+((SELECT id FROM users WHERE email = 'advisor2@rumail.ru.ac.th'), 'รศ.ดร.', 
+ ARRAY['Machine Learning', 'Data Science', 'AI'], 
+ 'ปัญญาประดิษฐ์, การเรียนรู้ของเครื่อง, วิทยาการข้อมูล', 6),
+((SELECT id FROM users WHERE email = 'advisor3@rumail.ru.ac.th'), 'อ.ดร.', 
+ ARRAY['Mobile Development', 'Game Development', 'UI/UX'], 
+ 'การพัฒนาแอปพลิเคชันมือถือ, การออกแบบเกม', 5);
 
 -- Insert sample notifications
 INSERT INTO notifications (user_id, title, message, type, priority, is_read) VALUES

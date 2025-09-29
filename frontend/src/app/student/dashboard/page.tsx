@@ -96,21 +96,23 @@ export default function StudentDashboard() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      proposal: "bg-gray-100 text-gray-800",
+      pending: "bg-yellow-100 text-yellow-800",
       approved: "bg-green-100 text-green-800",
+      rejected: "bg-red-100 text-red-800",
       in_progress: "bg-blue-100 text-blue-800",
       completed: "bg-purple-100 text-purple-800",
-      cancelled: "bg-red-100 text-red-800",
+      cancelled: "bg-gray-100 text-gray-800",
     };
     const statusText = {
-      proposal: "ร่าง",
+      pending: "รอการอนุมัติ",
       approved: "อนุมัติแล้ว",
+      rejected: "ถูกปฏิเสธ",
       in_progress: "กำลังดำเนินการ",
       completed: "เสร็จสิ้น",
       cancelled: "ยกเลิก",
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badges[status as keyof typeof badges] || badges.proposal}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badges[status as keyof typeof badges] || badges.pending}`}>
         {statusText[status as keyof typeof statusText] || status}
       </span>
     );

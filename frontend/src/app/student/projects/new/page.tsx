@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -12,8 +12,27 @@ export default function NewProjectPage() {
     title: '',
     description: '',
     category: '',
-    due_date: ''
+    due_date: '',
+    advisor_id: ''
   })
+  
+  const [advisors, setAdvisors] = useState<any[]>([])
+
+  // Load advisors on component mount
+  useEffect(() => {
+    const loadAdvisors = async () => {
+      try {
+        const response = await fetch('http://localhost:8081/api/advisors')
+        if (response.ok) {
+          const advisorData = await response.json()
+          setAdvisors(advisorData)
+        }
+      } catch (error) {
+        console.error('Failed to load advisors:', error)
+      }
+    }
+    loadAdvisors()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -122,6 +141,33 @@ export default function NewProjectPage() {
               />
             </div>
 
+            {/* Advisor */}
+            <div>
+              <label htmlFor="advisor_id" className="block text-sm font-medium text-gray-700 mb-2">
+                อาจารย์ที่ปรึกษา <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="advisor_id"
+                name="advisor_id"
+                value={formData.advisor_id}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">เลือกอาจารย์ที่ปรึกษา</option>
+                {advisors.map((advisor) => (
+                  <option key={advisor.id} value={advisor.id}>
+                    {advisor.user?.full_name || advisor.full_name} 
+                    {advisor.title && ` (${advisor.title})`}
+                    {advisor.specialization && ` - ${advisor.specialization.join(', ')}`}
+                  </option>
+                ))}
+              </select>
+              {advisors.length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">กำลังโหลดรายชื่ออาจารย์...</p>
+              )}
+            </div>
+
             {/* Category */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
@@ -173,7 +219,7 @@ export default function NewProjectPage() {
               </Link>
               <button
                 type="submit"
-                disabled={loading || !formData.title.trim()}
+                disabled={loading || !formData.title.trim() || !formData.advisor_id}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 {loading ? 'กำลังสร้าง...' : 'สร้างโปรเจค'}
@@ -186,6 +232,7 @@ export default function NewProjectPage() {
             <h3 className="font-medium text-blue-900 mb-2">💡 คำแนะนำ</h3>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• ตั้งชื่อโปรเจคให้ชัดเจนและเข้าใจง่าย</li>
+              <li>• เลือกอาจารย์ที่ปรึกษาที่เชี่ยวชาญในสาขาที่เกี่ยวข้อง</li>
               <li>• อธิบายรายละเอียดโปรเจคให้ครบถ้วน</li>
               <li>• เลือกหมวดหมู่ที่เหมาะสมเพื่อง่ายต่อการจัดการ</li>
               <li>• กำหนดวันที่ส่งเพื่อช่วยในการวางแผน</li>
