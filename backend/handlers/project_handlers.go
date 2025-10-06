@@ -23,6 +23,25 @@ func (h *ProjectHandler) GetProjects(c *fiber.Ctx) error {
 	var projects []models.Project
 	query := h.DB.Preload("Student.User").Preload("Advisor.User")
 
+	// Authorization filter based on user role
+	userID := c.Locals("user_id").(string)
+	userRole := c.Locals("user_role").(string)
+
+	switch userRole {
+	case "student":
+		// Students can only see their own projects
+		query = query.Where("student_id = ?", userID)
+	case "advisor":
+		// Advisors can see projects they are assigned to
+		query = query.Where("advisor_id = ?", userID)
+	case "admin":
+		// Admins can see all projects (no additional filter)
+	default:
+		return c.Status(403).JSON(fiber.Map{
+			"error": "Unauthorized access",
+		})
+	}
+
 	// Search functionality
 	if search := c.Query("q"); search != "" {
 		query = query.Where("title ILIKE ? OR description ILIKE ?", "%"+search+"%", "%"+search+"%")
@@ -92,7 +111,7 @@ func (h *ProjectHandler) GetProjectFiles(c *fiber.Ctx) error {
 
 // CreateProject - POST /api/projects
 func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
-	var input struct {
+	type CreateProjectInput struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Category    string `json:"category"`
@@ -101,6 +120,8 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		Type        string `json:"type"`
 		StudentID   string `json:"student_id"`
 	}
+
+	var input CreateProjectInput
 
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
