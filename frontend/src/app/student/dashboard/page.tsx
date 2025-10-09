@@ -67,8 +67,9 @@ export default function StudentDashboard() {
       
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
-        // Filter projects for current student (will be handled by backend based on JWT)
-        const formattedProjects = projectsData.slice(0, 5).map((project: any) => ({
+        // Backend returns { data: [], total, page, limit }
+        const projects = Array.isArray(projectsData) ? projectsData : (projectsData.data || []);
+        const formattedProjects = projects.slice(0, 5).map((project: any) => ({
           id: project.id,
           title: project.title || 'ไม่มีชื่อโครงงาน',
           description: project.description || 'ไม่มีคำอธิบาย',

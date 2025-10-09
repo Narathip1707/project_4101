@@ -95,10 +95,18 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 		category = "other"
 	}
 
-	// TODO: Get actual user ID from JWT token
-	uploadedBy := c.FormValue("uploaded_by")
-	if uploadedBy == "" {
-		uploadedBy = "dummy-user-id" // Replace with actual JWT parsing
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User not authenticated",
+		})
+	}
+
+	// Get description from form
+	description := c.FormValue("description")
+	if description == "" {
+		description = file.Filename // Default to filename if no description
 	}
 
 	// Get file type from content type
@@ -114,15 +122,15 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 	projectFile := models.ProjectFile{
 		ID:           fileId,
 		ProjectID:    projectId,
-		UploadedBy:   uploadedBy,
+		UploadedBy:   userID,
 		FileName:     file.Filename,
 		FilePath:     savePath,
-		FileSize:     &fileSize, // แก้ไข: ใช้ pointer
-		FileType:     fileType,  // แก้ไข: ใช้ FileType แทน MimeType
+		FileSize:     &fileSize,
+		FileType:     fileType,
 		FileCategory: category,
-		FileStatus:   "pending", // แก้ไข: ใช้ FileStatus แทน Status
+		FileStatus:   "pending",
 		Version:      1,
-		Description:  c.FormValue("description"),
+		Description:  description,
 		IsPublic:     false,
 		// CreatedAt และ UpdatedAt จะถูกตั้งค่าอัตโนมัติ
 	}
@@ -140,6 +148,25 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 		"message": "File uploaded successfully",
 		"file":    projectFile,
 	})
+}
+
+// GetFileById - GET /api/files/:id
+func (h *FileHandler) GetFileById(c *fiber.Ctx) error {
+	fileId := c.Params("id")
+	var projectFile models.ProjectFile
+
+	// Load file with relationships
+	if err := h.DB.
+		Preload("Project.Student.User").
+		Preload("Project").
+		First(&projectFile, "id = ?", fileId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(404).JSON(fiber.Map{"error": "File not found"})
+		}
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to fetch file"})
+	}
+
+	return c.JSON(projectFile)
 }
 
 // DownloadFile - GET /api/files/:id/download
@@ -211,9 +238,37 @@ func (h *FileHandler) GetRecentFiles(c *fiber.Ctx) error {
 		limit = 50 // Maximum 50 files
 	}
 
+	// Get user info from JWT
+	userID := c.Locals("user_id")
+	userRole := c.Locals("user_role")
+
 	var files []models.ProjectFile
-	err := h.DB.Preload("Project").
-		Order("created_at DESC").
+	query := h.DB.Preload("Project")
+
+	// Apply authorization filter based on role
+	if userRole == "student" {
+		// Students see only files from their own projects
+		var student models.Student
+		if err := h.DB.Where("user_id = ?", userID).First(&student).Error; err != nil {
+			return c.Status(404).JSON(fiber.Map{"error": "Student record not found"})
+		}
+
+		query = query.Joins("JOIN projects ON projects.id = project_files.project_id").
+			Where("projects.student_id = ?", student.ID)
+
+	} else if userRole == "advisor" {
+		// Advisors see files from projects they advise
+		var advisor models.Advisor
+		if err := h.DB.Where("user_id = ?", userID).First(&advisor).Error; err != nil {
+			return c.Status(404).JSON(fiber.Map{"error": "Advisor record not found"})
+		}
+
+		query = query.Joins("JOIN projects ON projects.id = project_files.project_id").
+			Where("projects.advisor_id = ?", advisor.ID)
+	}
+	// Admins see all files (no additional filter)
+
+	err := query.Order("created_at DESC").
 		Limit(limit).
 		Find(&files).Error
 

@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getUserInfo } from "@/utils/auth";
 
 type Message = {
   id: string;
+  project_id?: string;
   sender_id: string;
   sender_name: string;
   sender_role: "student" | "advisor";
   message: string;
   created_at: string;
   is_read: boolean;
+  sender?: {
+    id: string;
+    full_name: string;
+  };
 };
 
 type ProjectInfo = {
@@ -21,18 +26,49 @@ type ProjectInfo = {
   advisor_id: string;
 };
 
-export default function ProjectChat({ params }: { params: { id: string } }) {
-  const { id } = params;
+type WebSocketMessage = {
+  type: 'connected' | 'message' | 'typing' | 'read';
+  project_id?: string;
+  message?: Message;
+  user_id?: string;
+  user_name?: string;
+  timestamp?: string;
+};
+
+export default function ProjectChat({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [project, setProject] = useState<ProjectInfo | null>(null);
   const [user, setUser] = useState<any>(null);
   const [sending, setSending] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const router = useRouter();
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const sendingMessageRef = useRef(false); // Flag to prevent cleanup during send
+  const cleanupBlockedRef = useRef(false); // Block cleanup during message send
+
+  const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+
+  // Scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    console.log('Messages updated:', messages.length, messages);
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     const userInfo = getUserInfo();
     setUser(userInfo);
+    console.log('User info:', userInfo);
     loadProjectInfo();
     loadMessages();
   }, [id]);
@@ -40,7 +76,6 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
   const loadProjectInfo = async () => {
     try {
       const token = localStorage.getItem("token");
-      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
       
       const response = await fetch(`${baseUrl}/api/projects/${id}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -63,26 +98,20 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
   const loadMessages = async () => {
     try {
       const token = localStorage.getItem("token");
-      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
       
-      const response = await fetch(`${baseUrl}/api/projects/${id}/messages`, {
+      console.log('Loading messages from API...');
+      const response = await fetch(`${baseUrl}/api/chats/${id}/messages`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
+      console.log('API Response status:', response.status);
+      
       if (response.ok) {
         const messagesData = await response.json();
-        const formattedMessages = messagesData.map((msg: any) => ({
-          id: msg.id,
-          sender_id: msg.sender_id,
-          sender_name: msg.sender?.full_name || msg.sender_name || 'ไม่มีชื่อ',
-          sender_role: msg.sender?.role || (msg.sender_id === user?.id ? 'student' : 'advisor'),
-          message: msg.message || msg.content,
-          created_at: msg.created_at || msg.sent_at,
-          is_read: msg.is_read || false,
-        }));
-        setMessages(formattedMessages);
+        console.log('Messages loaded:', messagesData);
+        setMessages(messagesData || []);
       } else {
-        // Fallback to empty array if API fails
+        console.error('Failed to load messages:', response.statusText);
         setMessages([]);
       }
     } catch (error) {
@@ -91,70 +120,267 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || sending) return;
+  // WebSocket connection
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
 
-    setSending(true);
-    try {
-      const token = localStorage.getItem("token");
-      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+    let isUnmounted = false;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+
+    const connectWebSocket = () => {
+      // Clean up existing connection
+      if (wsRef.current) {
+        try {
+          wsRef.current.close(1000, 'Component cleanup');
+        } catch (e) {
+          // Ignore close errors
+        }
+        wsRef.current = null;
+      }
+
+      // Don't reconnect if unmounted or exceeded max attempts
+      if (isUnmounted || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          console.log('Max reconnection attempts reached');
+        }
+        return;
+      }
+
+      // Connect to WebSocket
+      const wsUrl = `ws://localhost:8081/ws/chat/${id}?token=${token}`;
+      console.log('Connecting to WebSocket:', wsUrl);
       
-      const messageData = {
-        project_id: id,
-        message: newMessage.trim(),
-        recipient_id: project?.advisor_id,
-      };
+      try {
+        const ws = new WebSocket(wsUrl);
+        let pingInterval: NodeJS.Timeout | null = null;
 
-      const response = await fetch(`${baseUrl}/api/projects/${id}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(messageData)
-      });
+        ws.onopen = () => {
+          console.log('✅ WebSocket connected');
+          setIsConnected(true);
+          reconnectAttempts = 0; // Reset counter on successful connection
 
-      if (response.ok) {
-        const savedMessage = await response.json();
-        const newMsg: Message = {
-          id: savedMessage.id,
-          sender_id: user?.id || savedMessage.sender_id,
-          sender_name: user?.fullName || user?.full_name || "นักศึกษา",
-          sender_role: "student",
-          message: newMessage.trim(),
-          created_at: savedMessage.created_at || new Date().toISOString(),
-          is_read: false,
+          // Send ping every 30 seconds to keep connection alive
+          pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              try {
+                ws.send(JSON.stringify({ type: 'ping' }));
+              } catch (e) {
+                console.error('Error sending ping:', e);
+              }
+            } else {
+              if (pingInterval) clearInterval(pingInterval);
+            }
+          }, 30000);
         };
-        setMessages(prev => [...prev, newMsg]);
-      } else {
-        // Fallback to local message if API fails
-        const mockMessage: Message = {
-          id: Date.now().toString(),
-          sender_id: user?.id || "student1",
-          sender_name: user?.fullName || user?.full_name || "นักศึกษา",
-          sender_role: "student",
-          message: newMessage.trim(),
-          created_at: new Date().toISOString(),
-          is_read: false,
+
+        ws.onmessage = (event) => {
+          try {
+            const wsMessage: WebSocketMessage = JSON.parse(event.data);
+            console.log('WebSocket message received:', wsMessage);
+
+            switch (wsMessage.type) {
+              case 'connected':
+                console.log('Connected to chat');
+                break;
+
+              case 'message':
+                console.log('Message data:', wsMessage.message);
+                if (wsMessage.message) {
+                  console.log('Adding message to state:', wsMessage.message);
+                  setMessages((prev) => {
+                    const newMessages = [...prev, wsMessage.message!];
+                    console.log('Updated messages:', newMessages);
+                    return newMessages;
+                  });
+                  setSending(false);
+                  sendingMessageRef.current = false; // Clear sending flag
+                  cleanupBlockedRef.current = false; // Unblock cleanup
+                } else {
+                  console.warn('Message received but wsMessage.message is null/undefined');
+                }
+                break;
+
+              case 'typing':
+                if (wsMessage.user_id !== user?.id) {
+                  setIsTyping(true);
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+                  typingTimeoutRef.current = setTimeout(() => {
+                    setIsTyping(false);
+                  }, 2000);
+                }
+                break;
+            }
+          } catch (err) {
+            console.error('Error parsing WebSocket message:', err);
+          }
         };
-        setMessages(prev => [...prev, mockMessage]);
+
+        ws.onerror = (error) => {
+          console.error('❌ WebSocket error:', error);
+          setIsConnected(false);
+          // Don't increment reconnect attempts here, let onclose handle it
+        };
+
+        ws.onclose = (event) => {
+          console.log(`🔌 WebSocket disconnected - Code: ${event.code}, Reason: ${event.reason || 'No reason'}`);
+          setIsConnected(false);
+          
+          // Clear ping interval
+          if (pingInterval) {
+            clearInterval(pingInterval);
+            pingInterval = null;
+          }
+          
+          // Codes to not reconnect:
+          // 1000 = Normal closure
+          // 1001 = Going away (page navigation)
+          const shouldNotReconnect = [1000, 1001].includes(event.code);
+          
+          // Attempt to reconnect after delay if not unmounted and not a normal closure
+          if (!isUnmounted && !shouldNotReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 10000); // Exponential backoff, max 10s
+            console.log(`🔄 Will attempt to reconnect in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+              connectWebSocket();
+            }, delay);
+          } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            console.log('❌ Max reconnection attempts reached. Please refresh the page.');
+          }
+        };
+
+        wsRef.current = ws;
+      } catch (error) {
+        console.error('❌ Error creating WebSocket:', error);
+        setIsConnected(false);
+        reconnectAttempts++;
+        
+        // Try to reconnect after error
+        if (!isUnmounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 5000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket();
+          }, delay);
+        }
+      }
+    };
+
+    // Initial connection
+    connectWebSocket();
+
+    return () => {
+      console.log('🧹 Cleanup function called');
+      isUnmounted = true;
+      
+      // Check if cleanup is blocked (message being sent)
+      if (cleanupBlockedRef.current) {
+        console.log('⛔ CLEANUP BLOCKED - Message is being sent, will not close WebSocket');
+        return;
       }
       
-      setNewMessage("");
-      setSending(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = undefined;
+      }
       
-      // Scroll to bottom
-      setTimeout(() => {
-        const chatContainer = document.getElementById("chat-container");
-        if (chatContainer) {
-          chatContainer.scrollTop = chatContainer.scrollHeight;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = undefined;
+      }
+      
+      if (wsRef.current) {
+        console.log('Closing WebSocket normally');
+        try {
+          wsRef.current.close(1000, 'Component unmounting');
+          wsRef.current = null;
+        } catch (e) {
+          console.error('Error closing WebSocket:', e);
         }
-      }, 100);
+      }
+    };
+  }, [id]); // Only re-run when project ID changes
 
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || sending) return;
+
+    // Check WebSocket state
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.error('WebSocket is not connected. State:', wsRef.current?.readyState);
+      alert('กรุณารอสักครู่ WebSocket กำลังเชื่อมต่อ...');
+      return;
+    }
+
+    // Block cleanup during send
+    cleanupBlockedRef.current = true;
+    setSending(true);
+    sendingMessageRef.current = true; // Mark that we're sending
+    
+    const messageText = newMessage.trim();
+    setNewMessage(''); // Clear input immediately
+
+    try {
+      const wsMessage: WebSocketMessage = {
+        type: 'message',
+        message: {
+          id: '',
+          project_id: id,
+          sender_id: user?.id || '',
+          sender_name: user?.fullName || user?.full_name || 'นักศึกษา',
+          sender_role: 'student',
+          message: messageText,
+          is_read: false,
+          created_at: new Date().toISOString(),
+        },
+      };
+
+      const messageJson = JSON.stringify(wsMessage);
+      console.log('🚀 Sending message:', wsMessage);
+      console.log('📦 Message JSON:', messageJson);
+      console.log('🔌 WebSocket state:', wsRef.current.readyState, '(1 = OPEN)');
+      console.log('📊 Buffer before send:', wsRef.current.bufferedAmount, 'bytes');
+      
+      // Send the message
+      wsRef.current.send(messageJson);
+      
+      console.log('✅ Message queued to send');
+      console.log('📊 Buffer after send:', wsRef.current.bufferedAmount, 'bytes');
+      
+      // Fallback: Unblock cleanup and reset sending state after 5 seconds if no response
+      setTimeout(() => {
+        if (sendingMessageRef.current) {
+          console.log('⚠️ Message send timeout - unblocking cleanup');
+          sendingMessageRef.current = false;
+          cleanupBlockedRef.current = false;
+          setSending(false);
+        }
+      }, 5000);
+      
+      // Note: setSending(false) will be called when we receive the message back from server
+      // through WebSocket onmessage handler (case 'message')
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('❌ Error sending message:', error);
+      setNewMessage(messageText); // Restore message on error
       setSending(false);
+      sendingMessageRef.current = false;
+      cleanupBlockedRef.current = false;
+    }
+  };  const handleTyping = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const wsMessage: WebSocketMessage = {
+        type: 'typing',
+        user_id: user?.id,
+        user_name: user?.fullName || user?.full_name,
+      };
+      wsRef.current.send(JSON.stringify(wsMessage));
     }
   };
 
@@ -200,12 +426,20 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
               <p className="mt-1 text-gray-600">{project.title}</p>
               <p className="text-sm text-gray-500">อาจารย์ที่ปรึกษา: {project.advisor_name}</p>
             </div>
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              ← กลับ
-            </button>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-sm text-gray-600">
+                  {isConnected ? 'เชื่อมต่อแล้ว' : 'ไม่ได้เชื่อมต่อ'}
+                </span>
+              </div>
+              <button
+                onClick={() => router.back()}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                ← กลับ
+              </button>
+            </div>
           </div>
         </div>
 
@@ -260,34 +494,51 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
                 </div>
               </div>
             )}
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex justify-start mb-4">
+                <div className="bg-gray-200 rounded-lg px-4 py-2">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Message Input */}
           <div className="border-t border-gray-200 p-6">
-            <form onSubmit={handleSendMessage} className="flex space-x-4">
+            <div className="flex space-x-4">
               <div className="flex-1">
                 <textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    handleTyping();
+                  }}
                   placeholder="พิมพ์ข้อความของคุณ..."
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-black placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  disabled={sending}
+                  disabled={sending || !isConnected}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      handleSendMessage(e);
+                      handleSendMessage();
                     }
                   }}
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  กด Enter เพื่อส่งข้อความ หรือ Shift+Enter เพื่อขึ้นบรรทัดใหม่
+                  {isConnected ? 'กด Enter เพื่อส่งข้อความ หรือ Shift+Enter เพื่อขึ้นบรรทัดใหม่' : 'กำลังเชื่อมต่อ...'}
                 </p>
               </div>
               <div className="flex flex-col justify-end">
                 <button
-                  type="submit"
-                  disabled={!newMessage.trim() || sending}
+                  type="button"
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || sending || !isConnected}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sending ? (
@@ -300,7 +551,7 @@ export default function ProjectChat({ params }: { params: { id: string } }) {
                   )}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
 
