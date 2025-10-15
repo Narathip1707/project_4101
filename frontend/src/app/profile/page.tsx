@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { User, IdCard, Mail, Phone, Building2, GraduationCap, Calendar, Edit3, Save, X, Camera, FileText, Bell, Settings, Home } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -188,42 +189,41 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-[rgba(13,33,57,255)] p-10 animate-fadeInDown">
-        <h1 className="text-3xl font-bold text-center mb-2 text-white animate-fadeInUp animate-delay-200">
-          👤 โปรไฟล์ของฉัน
-        </h1>
-        <p className="text-center text-white animate-fadeInUp animate-delay-300">
-          จัดการข้อมูลส่วนตัวของคุณ
-        </p>
-      </div>
-
       <div className="max-w-4xl mx-auto p-6">
         {/* Profile Card */}
-        <div className="bg-white shadow-lg rounded-lg p-8 mb-6 animate-scaleIn hover-lift">
-          <div className="flex items-center justify-between mb-6 animate-fadeInLeft">
-            <h2 className="text-2xl font-bold text-black">📋 ข้อมูลส่วนตัว</h2>
+        <div className="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัว</h2>
+            </div>
             {!isEditing ? (
               <button
                 onClick={handleEdit}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-300 hover-lift glow"
+                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl group"
               >
-                ✏️ แก้ไขข้อมูล
+                <Edit3 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+                แก้ไขข้อมูล
               </button>
             ) : (
-              <div className="space-x-2 animate-fadeInRight">
+              <div className="flex gap-2">
                 <button
                   onClick={handleSave}
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 hover-lift"
+                  className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 transition-all duration-300 shadow-lg hover:shadow-xl group"
                 >
-                  ✅ บันทึก
+                  <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
+                  บันทึก
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-all duration-300 hover-lift"
+                  className="flex items-center gap-2 bg-gray-500 text-white px-5 py-2.5 rounded-xl hover:bg-gray-600 transition-all duration-300 shadow-lg hover:shadow-xl group"
                 >
-                  ❌ ยกเลิก
+                  <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                  ยกเลิก
                 </button>
               </div>
             )}
@@ -232,13 +232,13 @@ export default function Profile() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Profile Image */}
             <div className="md:col-span-2 flex justify-center mb-6">
-              <div className="relative">
-                <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-4xl text-gray-600">👤</span>
+              <div className="relative group">
+                <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-300">
+                  <User className="w-16 h-16 text-white" />
                 </div>
                 {isEditing && (
-                  <button className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-600">
-                    📷
+                  <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <Camera className="w-5 h-5" />
                   </button>
                 )}
               </div>
@@ -246,96 +246,117 @@ export default function Profile() {
 
             {/* Form Fields */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <User className="w-4 h-4 text-blue-600" />
+                ชื่อ-นามสกุล
+              </label>
               {isEditing ? (
                 <input
                   type="text"
                   value={editForm?.fullName || ""}
                   onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.fullName}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.fullName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 ">รหัสนักศึกษา</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <IdCard className="w-4 h-4 text-purple-600" />
+                รหัสนักศึกษา
+              </label>
               {isEditing ? (
                 <input
                   type="text"
                   value={editForm?.studentId || ""}
                   onChange={(e) => handleInputChange("studentId", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.studentId}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.studentId}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Mail className="w-4 h-4 text-red-600" />
+                อีเมล
+              </label>
               {isEditing ? (
                 <input
                   type="email"
                   value={editForm?.email || ""}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.email}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.email}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Phone className="w-4 h-4 text-green-600" />
+                เบอร์โทรศัพท์
+              </label>
               {isEditing ? (
                 <input
                   type="tel"
                   value={editForm?.phone || ""}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.phone}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.phone}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ภาควิชา</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                ภาควิชา
+              </label>
               {isEditing ? (
                 <input
                   type="text"
                   value={editForm?.department || ""}
                   onChange={(e) => handleInputChange("department", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.department}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.department}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">คณะ</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <GraduationCap className="w-4 h-4 text-amber-600" />
+                คณะ
+              </label>
               {isEditing ? (
                 <input
                   type="text"
                   value={editForm?.faculty || ""}
                   onChange={(e) => handleInputChange("faculty", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">{user.faculty}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.faculty}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ชั้นปี</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 text-pink-600" />
+                ชั้นปี
+              </label>
               {isEditing ? (
                 <select
                   value={editForm?.year || ""}
                   onChange={(e) => handleInputChange("year", e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-black text-black"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 >
                   <option value="1">ปี 1</option>
                   <option value="2">ปี 2</option>
@@ -343,7 +364,7 @@ export default function Profile() {
                   <option value="4">ปี 4</option>
                 </select>
               ) : (
-                <p className="p-3 bg-gray-50 rounded-lg text-black placeholder:text-black">ปี {user.year}</p>
+                <p className="p-3 bg-gray-50 rounded-xl text-black">ปี {user.year}</p>
               )}
             </div>
           </div>
@@ -351,36 +372,43 @@ export default function Profile() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Link href="/projects" className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover-lift animate-fadeInLeft animate-delay-800">
+          <Link href="/projects" className="group bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="text-center">
-              <div className="text-3xl mb-2 animate-bounce-custom">📚</div>
-              <h3 className="text-lg font-semibold text-black mb-2">โครงงานของฉัน</h3>
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors duration-300">
+                <FileText className="w-8 h-8 text-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">โครงงานของฉัน</h3>
               <p className="text-gray-600 text-sm">ดูและจัดการโครงงานพิเศษ</p>
             </div>
           </Link>
 
-          <Link href="/notifications" className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover-lift animate-fadeInUp animate-delay-900">
+          <Link href="/notifications" className="group bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="text-center">
-              <div className="text-3xl mb-2 animate-pulse-custom">🔔</div>
-              <h3 className="text-lg font-semibold text-black mb-2">การแจ้งเตือน</h3>
+              <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-amber-100 transition-colors duration-300">
+                <Bell className="w-8 h-8 text-amber-600 group-hover:scale-110 group-hover:animate-pulse transition-all duration-300" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">การแจ้งเตือน</h3>
               <p className="text-gray-600 text-sm">ดูการแจ้งเตือนและข่าวสาร</p>
             </div>
           </Link>
 
-          <Link href="/settings" className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover-lift animate-fadeInRight animate-delay-1000">
+          <Link href="/settings" className="group bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="text-center">
-              <div className="text-3xl mb-2 animate-spin-slow">⚙️</div>
-              <h3 className="text-lg font-semibold text-black mb-2">ตั้งค่า</h3>
+              <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-100 transition-colors duration-300">
+                <Settings className="w-8 h-8 text-purple-600 group-hover:rotate-90 transition-all duration-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">ตั้งค่า</h3>
               <p className="text-gray-600 text-sm">จัดการการตั้งค่าระบบ</p>
             </div>
           </Link>
         </div>
 
         {/* Back to Home */}
-        <div className="text-center animate-fadeInUp animate-delay-1100">
+        <div className="text-center">
           <Link href="/">
-            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all duration-300 hover-lift glow">
-              🏠 กลับสู่หน้าหลัก
+            <button className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl mx-auto group">
+              <Home className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              กลับสู่หน้าหลัก
             </button>
           </Link>
         </div>

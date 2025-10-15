@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getUserInfo } from "@/utils/auth";
+import { 
+  BookOpen, FileText, Bell, Award, Eye, FolderOpen, MessageSquare, 
+  Plus, Clock, CheckCircle, XCircle, AlertCircle, Loader2
+} from 'lucide-react';
 
 type Project = {
   id: string;
@@ -170,78 +174,78 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">กำลังโหลดข้อมูล...</p>
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
+          <p className="mt-4 text-gray-600 font-medium">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">แดชบอร์ดนักศึกษา</h1>
-          <p className="mt-2 text-gray-600">ยินดีต้อนรับ {user?.fullName}</p>
+          <p className="mt-2 text-gray-600">ยินดีต้อนรับ <span className="font-semibold text-blue-600">{user?.fullName}</span></p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="group bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">📚</span>
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-300">
+                  <BookOpen className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
                 </div>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">โครงงานของฉัน</p>
-                <p className="text-2xl font-semibold text-gray-900">{projects.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{projects.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="group bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">📄</span>
+                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors duration-300">
+                  <FileText className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform duration-300" />
                 </div>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">ไฟล์ที่อัปโหลด</p>
-                <p className="text-2xl font-semibold text-gray-900">{recentFiles.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{recentFiles.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="group bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">🔔</span>
+                <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors duration-300">
+                  <Bell className="w-6 h-6 text-amber-600 group-hover:scale-110 group-hover:animate-pulse transition-all duration-300" />
                 </div>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">การแจ้งเตือนใหม่</p>
-                <p className="text-2xl font-semibold text-gray-900">{notifications.filter(n => !n.is_read).length}</p>
+                <p className="text-2xl font-bold text-gray-900">{notifications.filter(n => !n.is_read).length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="group bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">⭐</span>
+                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors duration-300">
+                  <Award className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform duration-300" />
                 </div>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">เกรดเฉลี่ย</p>
-                <p className="text-2xl font-semibold text-gray-900">-</p>
+                <p className="text-2xl font-bold text-gray-900">-</p>
               </div>
             </div>
           </div>
@@ -250,56 +254,65 @@ export default function StudentDashboard() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* My Projects */}
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">โครงงานของฉัน</h3>
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">โครงงานของฉัน</h3>
+              </div>
             </div>
             <div className="p-6">
               {projects.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">ยังไม่มีโครงงาน</p>
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 mb-4">ยังไม่มีโครงงาน</p>
                   <Link
                     href="/student/projects/new"
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
                   >
+                    <Plus className="w-4 h-4" />
                     เริ่มโครงงานใหม่
                   </Link>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {projects.map((project) => (
-                    <div key={project.id} className="border rounded-lg p-4">
+                    <div key={project.id} className="group border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{project.title}</h4>
-                          <p className="mt-1 text-sm text-gray-500">{project.description}</p>
-                          <div className="mt-2 flex items-center space-x-4">
-                            <div className="flex items-center text-sm text-gray-500">
-                              <span>อาจารย์ที่ปรึกษา: {project.advisor_name || "ยังไม่ได้รับมอบหมาย"}</span>
-                            </div>
+                          <h4 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{project.title}</h4>
+                          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{project.description}</p>
+                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                            <Clock className="w-4 h-4" />
+                            <span>อาจารย์: {project.advisor_name || "ยังไม่ได้รับมอบหมาย"}</span>
                           </div>
                         </div>
                         <div className="ml-4">
                           {getStatusBadge(project.status)}
                         </div>
                       </div>
-                      <div className="mt-4 flex space-x-2">
+                      <div className="mt-4 flex flex-wrap gap-2">
                         <Link
                           href={`/student/projects/${project.id}`}
-                          className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all duration-300"
                         >
+                          <Eye className="w-3.5 h-3.5" />
                           ดูรายละเอียด
                         </Link>
                         <Link
                           href={`/student/projects/${project.id}/files`}
-                          className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all duration-300"
                         >
+                          <FolderOpen className="w-3.5 h-3.5" />
                           จัดการไฟล์
                         </Link>
                         <Link
                           href={`/student/projects/${project.id}/chat`}
-                          className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all duration-300"
                         >
+                          <MessageSquare className="w-3.5 h-3.5" />
                           แชทกับอาจารย์
                         </Link>
                       </div>
@@ -311,26 +324,37 @@ export default function StudentDashboard() {
           </div>
 
           {/* Recent Files */}
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">ไฟล์ล่าสุด</h3>
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-green-600" />
+                <h3 className="text-lg font-semibold text-gray-900">ไฟล์ล่าสุด</h3>
+              </div>
             </div>
             <div className="p-6">
               {recentFiles.length === 0 ? (
                 <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
                   <p className="text-gray-500">ยังไม่มีไฟล์ที่อัปโหลด</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {recentFiles.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-900">{file.file_name}</h4>
-                        <p className="text-sm text-gray-500">
-                          อัปโหลดเมื่อ {new Date(file.uploaded_at || "").toLocaleDateString("th-TH")}
-                        </p>
+                    <div key={file.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors duration-300">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-gray-900 truncate">{file.file_name}</h4>
+                          <p className="text-xs text-gray-500">
+                            {new Date(file.uploaded_at || "").toLocaleDateString("th-TH")}
+                          </p>
+                        </div>
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-4 flex-shrink-0">
                         {getFileStatusBadge(file.file_status)}
                       </div>
                     </div>
@@ -341,21 +365,27 @@ export default function StudentDashboard() {
           </div>
 
           {/* Notifications */}
-          <div className="bg-white rounded-lg shadow lg:col-span-2">
+          <div className="bg-white rounded-2xl shadow-xl lg:col-span-2 border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">การแจ้งเตือน</h3>
+                <div className="flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">การแจ้งเตือน</h3>
+                </div>
                 <Link
                   href="/notifications"
-                  className="text-sm text-blue-600 hover:text-blue-500"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 >
-                  ดูทั้งหมด
+                  ดูทั้งหมด →
                 </Link>
               </div>
             </div>
             <div className="p-6">
               {notifications.length === 0 ? (
                 <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Bell className="w-8 h-8 text-gray-400" />
+                  </div>
                   <p className="text-gray-500">ไม่มีการแจ้งเตือน</p>
                 </div>
               ) : (
@@ -363,21 +393,29 @@ export default function StudentDashboard() {
                   {notifications.slice(0, 3).map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 rounded-lg border ${
-                        notification.is_read ? "bg-gray-50" : "bg-blue-50 border-blue-200"
+                      className={`p-4 rounded-xl border transition-all duration-300 ${
+                        notification.is_read 
+                          ? "bg-gray-50 border-gray-200" 
+                          : "bg-blue-50 border-blue-200 shadow-sm"
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{notification.title}</h4>
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          notification.is_read ? "bg-gray-200" : "bg-blue-100"
+                        }`}>
+                          <Bell className={`w-5 h-5 ${notification.is_read ? "text-gray-500" : "text-blue-600"}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-semibold text-gray-900">{notification.title}</h4>
                           <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
-                          <p className="mt-2 text-xs text-gray-500">
+                          <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
                             {new Date(notification.created_at).toLocaleString("th-TH")}
                           </p>
                         </div>
                         {!notification.is_read && (
-                          <div className="ml-4">
-                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                          <div className="flex-shrink-0">
+                            <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>
                           </div>
                         )}
                       </div>
