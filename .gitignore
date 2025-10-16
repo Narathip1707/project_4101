@@ -58,6 +58,15 @@ bin/
 tmp/
 **/tmp/
 
+# Go temporary files
+verify_admin.go
+generate_hash.go
+
+# Logs
+*.log
+backend/backend.log
+backend.log
+
 # Docker/local overrides
 docker-compose.override.yml
 .envrc

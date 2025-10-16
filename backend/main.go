@@ -144,6 +144,8 @@ func main() {
 	adminRoutes.Put("/users/:id", adminHandler.UpdateUser)
 	adminRoutes.Delete("/users/:id", adminHandler.DeleteUser)
 	adminRoutes.Post("/users/:id/reset-password", adminHandler.ResetPassword)
+	adminRoutes.Get("/projects", adminHandler.GetProjects)
+	adminRoutes.Delete("/projects/:id", adminHandler.DeleteProject)
 
 	// Chat REST endpoints (protected)
 	protected.Get("/chats/:project_id/messages", chatHandler.GetChatHistory)

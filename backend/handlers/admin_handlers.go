@@ -337,3 +337,146 @@ func (h *AdminHandler) GetUserStats(c *fiber.Ctx) error {
 
 	return c.JSON(stats)
 }
+
+// GetProjects - List all projects (admin only)
+func (h *AdminHandler) GetProjects(c *fiber.Ctx) error {
+	type ProjectResponse struct {
+		ID           string `json:"id"`
+		Title        string `json:"title"`
+		Description  string `json:"description"`
+		Status       string `json:"status"`
+		StudentID    string `json:"student_id"`
+		StudentName  string `json:"student_name"`
+		AdvisorID    string `json:"advisor_id"`
+		AdvisorName  string `json:"advisor_name"`
+		CreatedAt    string `json:"created_at"`
+		UpdatedAt    string `json:"updated_at"`
+	}
+
+	// Pagination
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
+	offset := (page - 1) * limit
+
+	// Filters
+	search := c.Query("search")
+	status := c.Query("status")
+
+	// Build query
+	query := h.DB.Model(&models.Project{}).
+		Joins("LEFT JOIN students ON projects.student_id = students.id").
+		Joins("LEFT JOIN users AS student_users ON students.user_id = student_users.id").
+		Joins("LEFT JOIN advisors ON projects.advisor_id = advisors.id").
+		Joins("LEFT JOIN users AS advisor_users ON advisors.user_id = advisor_users.id").
+		Select(`
+			projects.id,
+			projects.title,
+			projects.description,
+			projects.status,
+			student_users.student_id,
+			student_users.full_name as student_name,
+			advisor_users.employee_id as advisor_id,
+			advisor_users.full_name as advisor_name,
+			projects.created_at,
+			projects.updated_at
+		`)
+
+	// Apply filters
+	if search != "" {
+		query = query.Where(`
+			projects.title LIKE ? OR
+			projects.description LIKE ? OR
+			student_users.full_name LIKE ? OR
+			advisor_users.full_name LIKE ?
+		`, "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+
+	if status != "" {
+		query = query.Where("projects.status = ?", status)
+	}
+
+	// Get total count
+	var total int64
+	countQuery := h.DB.Model(&models.Project{})
+	if search != "" {
+		countQuery = countQuery.
+			Joins("LEFT JOIN students ON projects.student_id = students.id").
+			Joins("LEFT JOIN users AS student_users ON students.user_id = student_users.id").
+			Joins("LEFT JOIN advisors ON projects.advisor_id = advisors.id").
+			Joins("LEFT JOIN users AS advisor_users ON advisors.user_id = advisor_users.id").
+			Where(`
+				projects.title LIKE ? OR
+				projects.description LIKE ? OR
+				student_users.full_name LIKE ? OR
+				advisor_users.full_name LIKE ?
+			`, "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+	if status != "" {
+		countQuery = countQuery.Where("status = ?", status)
+	}
+	countQuery.Count(&total)
+
+	// Get projects
+	var projects []ProjectResponse
+	if err := query.
+		Order("projects.created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(&projects).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch projects",
+		})
+	}
+
+	// Calculate pagination
+	totalPages := int(total) / limit
+	if int(total)%limit > 0 {
+		totalPages++
+	}
+
+	return c.JSON(fiber.Map{
+		"projects": projects,
+		"pagination": fiber.Map{
+			"page":   page,
+			"limit":  limit,
+			"total":  total,
+			"pages":  totalPages,
+		},
+	})
+}
+
+// DeleteProject - Delete a project (admin only)
+func (h *AdminHandler) DeleteProject(c *fiber.Ctx) error {
+	projectID := c.Params("id")
+
+	// Check if project exists
+	var project models.Project
+	if err := h.DB.First(&project, "id = ?", projectID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Project not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to check project",
+		})
+	}
+
+	// Delete related records first (files, notifications, etc.)
+	// Delete project files
+	h.DB.Where("project_id = ?", projectID).Delete(&models.ProjectFile{})
+	
+	// Delete notifications related to this project
+	h.DB.Where("project_id = ?", projectID).Delete(&models.Notification{})
+
+	// Delete the project
+	if err := h.DB.Delete(&project).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to delete project",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Project deleted successfully",
+	})
+}
