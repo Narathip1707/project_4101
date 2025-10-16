@@ -61,14 +61,18 @@ export default function Nav() {
   };
 
   const getDashboardLink = () => {
-    if (user?.role === 'advisor') {
+    if (user?.role === 'admin') {
+      return '/admin/dashboard';
+    } else if (user?.role === 'advisor') {
       return '/advisor/dashboard';
     }
     return '/student/dashboard';
   };
 
   const getProjectsLink = () => {
-    if (user?.role === 'advisor') {
+    if (user?.role === 'admin') {
+      return '/admin/dashboard';
+    } else if (user?.role === 'advisor') {
       return '/advisor/dashboard';
     }
     return '/student/projects';

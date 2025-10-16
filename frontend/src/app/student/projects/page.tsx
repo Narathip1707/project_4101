@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { Plus, FileText, Calendar, Clock, User, FolderOpen, MessageCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react"
 
 interface Project {
   id: number
@@ -104,7 +105,7 @@ export default function StudentProjectsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
               <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
             </div>
           </div>
@@ -124,8 +125,9 @@ export default function StudentProjectsPage() {
               <p className="text-gray-600">จัดการและติดตามโปรเจคทั้งหมดของคุณ</p>
             </div>
             <Link href="/student/projects/new">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                ➕ สร้างโปรเจคใหม่
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                <Plus className="w-5 h-5" />
+                <span>สร้างโปรเจคใหม่</span>
               </button>
             </Link>
           </div>
@@ -133,12 +135,16 @@ export default function StudentProjectsPage() {
           {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600">{error}</p>
+              <div className="flex items-center gap-2 text-red-600 mb-2">
+                <AlertCircle className="w-5 h-5" />
+                <p>{error}</p>
+              </div>
               <button 
                 onClick={loadProjects} 
-                className="mt-2 border border-red-300 text-red-600 px-3 py-1 rounded text-sm hover:bg-red-50"
+                className="mt-2 border border-red-300 text-red-600 px-3 py-1 rounded text-sm hover:bg-red-50 flex items-center gap-1"
               >
-                ลองใหม่
+                <RefreshCw className="w-4 h-4" />
+                <span>ลองใหม่</span>
               </button>
             </div>
           )}
@@ -147,7 +153,7 @@ export default function StudentProjectsPage() {
           {projects.length === 0 && !error ? (
             <div className="bg-white rounded-lg p-12 text-center shadow-sm">
               <div className="text-gray-400 mb-4">
-                <div className="text-6xl">📄</div>
+                <FileText className="w-16 h-16 mx-auto" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 ยังไม่มีโปรเจค
@@ -156,8 +162,9 @@ export default function StudentProjectsPage() {
                 เริ่มต้นสร้างโปรเจคแรกของคุณเลย
               </p>
               <Link href="/student/projects/new">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                  ➕ สร้างโปรเจคใหม่
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto">
+                  <Plus className="w-5 h-5" />
+                  <span>สร้างโปรเจคใหม่</span>
                 </button>
               </Link>
             </div>
@@ -183,24 +190,26 @@ export default function StudentProjectsPage() {
                   {/* Details */}
                   <div className="space-y-2 text-sm text-gray-600 mb-6">
                     <div className="flex items-center gap-2">
-                      <span>📅</span>
+                      <Calendar className="w-4 h-4" />
                       <span>สร้างเมื่อ: {formatDate(project.created_at)}</span>
                     </div>
                     {project.due_date && (
                       <div className="flex items-center gap-2">
-                        <span>⏰</span>
+                        <Clock className="w-4 h-4" />
                         <span>กำหนดส่ง: {formatDate(project.due_date)}</span>
                       </div>
                     )}
                     {project.advisor_name && (
-                      <div>
-                        <span className="font-medium">👨‍🏫 อาจารย์ที่ปรึกษา: </span>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span className="font-medium">อาจารย์ที่ปรึกษา: </span>
                         <span>{project.advisor_name}</span>
                       </div>
                     )}
                     {project.category && (
-                      <div>
-                        <span className="font-medium">🏷️ หมวดหมู่: </span>
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        <span className="font-medium">หมวดหมู่: </span>
                         <span>{project.category}</span>
                       </div>
                     )}
@@ -215,12 +224,12 @@ export default function StudentProjectsPage() {
                     </Link>
                     <Link href={`/student/projects/${project.id}/files`}>
                       <button className="border border-gray-300 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
-                        📁
+                        <FolderOpen className="w-4 h-4" />
                       </button>
                     </Link>
                     <Link href={`/student/projects/${project.id}/chat`}>
                       <button className="border border-gray-300 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
-                        💬
+                        <MessageCircle className="w-4 h-4" />
                       </button>
                     </Link>
                   </div>

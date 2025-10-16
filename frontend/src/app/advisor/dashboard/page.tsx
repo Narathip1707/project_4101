@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getUserInfo } from "@/utils/auth";
+import { 
+  Users, FileText, CheckCircle, Clock, 
+  AlertCircle, MessageCircle, FolderOpen, 
+  ClipboardList, File 
+} from "lucide-react";
 
 type Student = {
   id: string;
@@ -210,21 +215,24 @@ export default function AdvisorDashboard() {
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/advisor/pending-projects"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
-                📋 ดูโปรเจคที่รอการอนุมัติ
+                <ClipboardList className="w-4 h-4" />
+                <span>ดูโปรเจคที่รอการอนุมัติ</span>
               </Link>
               <Link
                 href="/advisor/files/review"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                📄 ตรวจสอบไฟล์
+                <FileText className="w-4 h-4" />
+                <span>ตรวจสอบไฟล์</span>
               </Link>
               <Link
                 href="/advisor/students"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                👥 จัดการนักศึกษา
+                <Users className="w-4 h-4" />
+                <span>จัดการนักศึกษา</span>
               </Link>
             </div>
           </div>
@@ -236,7 +244,7 @@ export default function AdvisorDashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">👥</span>
+                  <Users className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div className="ml-4">
@@ -250,7 +258,7 @@ export default function AdvisorDashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">📄</span>
+                  <FileText className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div className="ml-4">
@@ -264,7 +272,7 @@ export default function AdvisorDashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">�</span>
+                  <MessageCircle className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div className="ml-4">
@@ -278,7 +286,7 @@ export default function AdvisorDashboard() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">✅</span>
+                  <CheckCircle className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div className="ml-4">
@@ -357,7 +365,7 @@ export default function AdvisorDashboard() {
             <div className="p-6">
               {pendingFiles.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-400 text-4xl mb-4">📁</div>
+                  <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">ไม่มีไฟล์รอตรวจสอบ</p>
                 </div>
               ) : (
@@ -409,7 +417,7 @@ export default function AdvisorDashboard() {
             <div className="p-6">
               {recentMessages.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-400 text-4xl mb-4">💬</div>
+                  <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">ไม่มีข้อความใหม่</p>
                 </div>
               ) : (

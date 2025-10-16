@@ -10,6 +10,7 @@ import EmailInput from "@/components/forms/EmailInput";
 import PasswordInput from "@/components/forms/PasswordInput";
 import SubmitButton from "@/components/forms/SubmitButton";
 import Link from "next/link";
+import { LogIn, UserPlus, ShieldAlert, Loader2 } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
@@ -62,7 +63,12 @@ export default function Login() {
 
   return (
     <AnimatedFormContainer
-      title="🔐 เข้าสู่ระบบ"
+      title={
+        <div className="flex items-center justify-center gap-3">
+          <LogIn className="w-8 h-8 text-blue-600" />
+          <span>เข้าสู่ระบบ</span>
+        </div>
+      }
       description="เข้าสู่ระบบจัดการโครงงานพิเศษ"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -83,7 +89,10 @@ export default function Login() {
         {/* Root Error */}
         {errors.root && (
           <div className="bg-red-50 border border-red-200 rounded-md p-3 animate-fadeInUp animate-delay-300">
-            <p className="text-sm text-red-600 animate-pulse">❌ {errors.root.message}</p>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-red-600 animate-pulse" />
+              <p className="text-sm text-red-600">{errors.root.message}</p>
+            </div>
           </div>
         )}
 
@@ -93,18 +102,22 @@ export default function Login() {
           animationClass="animate-fadeInUp animate-delay-700"
           loadingText="กำลังเข้าสู่ระบบ..."
         >
-          🚀 เข้าสู่ระบบ
+          <div className="flex items-center justify-center gap-2">
+            <LogIn className="w-5 h-5" />
+            <span>เข้าสู่ระบบ</span>
+          </div>
         </SubmitButton>
 
         {/* Link to Signup */}
         <div className="text-center animate-fadeInUp animate-delay-800">
-          <p className="text-sm text-gray-600">
-            ยังไม่มีบัญชี?{" "}
+          <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
+            <span>ยังไม่มีบัญชี?</span>
             <Link
               href="/signup"
-              className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
+              className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors flex items-center gap-1"
             >
-              ลงทะเบียนที่นี่
+              <UserPlus className="w-4 h-4" />
+              <span>ลงทะเบียนที่นี่</span>
             </Link>
           </p>
         </div>

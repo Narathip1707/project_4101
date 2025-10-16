@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface SubmitButtonProps {
   isSubmitting: boolean;
@@ -29,8 +30,8 @@ export default function SubmitButton({
       )}
     >
       {isSubmitting ? (
-        <div className="flex items-center justify-center space-x-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+        <div className="flex items-center justify-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
           <span>{loadingText}</span>
         </div>
       ) : (

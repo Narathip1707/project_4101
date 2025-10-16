@@ -31,6 +31,12 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
+# Credentials and sensitive information
+CREDENTIALS.md
+credentials.md
+**/CREDENTIALS*.md
+**/credentials*.md
+
 # OS junk
 .DS_Store
 Thumbs.db

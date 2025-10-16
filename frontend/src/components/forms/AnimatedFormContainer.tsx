@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 
 interface AnimatedFormContainerProps {
-  title: string;
+  title: React.ReactNode;
   description?: string;
   children: React.ReactNode;
   className?: string;
@@ -21,7 +21,7 @@ export default function AnimatedFormContainer({
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className={cn(
-        "w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm transform transition-all duration-500 hover:scale-105 hover:shadow-3xl",
+        "w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm transform transition-all duration-500 hover:scale-100 hover:shadow-3xl",
         animationClass,
         className
       )}>

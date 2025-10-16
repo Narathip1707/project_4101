@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
+import { XCircle, FileText, FolderOpen, MessageCircle, Printer } from "lucide-react"
 
 interface Project {
   id: number
@@ -143,7 +144,7 @@ export default function ProjectDetailPage() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg p-8 text-center">
-            <div className="text-6xl mb-4">❌</div>
+            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">เกิดข้อผิดพลาด</h2>
             <p className="text-gray-600 mb-4">{error}</p>
             <div className="flex gap-4 justify-center">
@@ -170,7 +171,7 @@ export default function ProjectDetailPage() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg p-8 text-center">
-            <div className="text-6xl mb-4">📄</div>
+            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">ไม่พบโปรเจค</h2>
             <p className="text-gray-600 mb-4">ไม่พบโปรเจคที่คุณกำลังค้นหา</p>
             <Link href="/student/projects">
@@ -227,13 +228,13 @@ export default function ProjectDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Link href={`/student/projects/${project.id}/files`}>
                   <button className="w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-lg transition-colors">
-                    <span>📁</span>
+                    <FolderOpen className="w-5 h-5" />
                     <span>จัดการไฟล์</span>
                   </button>
                 </Link>
                 <Link href={`/student/projects/${project.id}/chat`}>
                   <button className="w-full flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-3 rounded-lg transition-colors">
-                    <span>💬</span>
+                    <MessageCircle className="w-5 h-5" />
                     <span>แชทกับอาจารย์</span>
                   </button>
                 </Link>
@@ -241,7 +242,7 @@ export default function ProjectDetailPage() {
                   onClick={() => window.print()}
                   className="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-700 px-4 py-3 rounded-lg transition-colors"
                 >
-                  <span>🖨️</span>
+                  <Printer className="w-5 h-5" />
                   <span>พิมพ์รายงาน</span>
                 </button>
               </div>

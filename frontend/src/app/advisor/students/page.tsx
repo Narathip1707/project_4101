@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { RefreshCw, Users } from 'lucide-react';
 
 interface StudentProgress {
   id: string;
@@ -311,9 +312,10 @@ export default function StudentsManagementPage() {
             <div className="flex items-end">
               <button
                 onClick={loadStudents}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center gap-2"
               >
-                🔄 รีเฟรช
+                <RefreshCw className="w-4 h-4" />
+                <span>รีเฟรช</span>
               </button>
             </div>
           </div>
@@ -349,9 +351,7 @@ export default function StudentsManagementPage() {
         <div className="bg-white rounded-lg shadow-sm">
           {filteredStudents.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
-                👥
-              </div>
+              <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <p className="text-gray-500 text-lg">
                 {students.length === 0 ? 'ไม่พบนักศึกษาในระบบ' : 'ไม่พบนักศึกษาที่ตรงกับเงื่อนไขการค้นหา'}
               </p>

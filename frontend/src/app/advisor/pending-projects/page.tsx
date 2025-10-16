@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { ClipboardList, Loader2, Check, X } from "lucide-react"
 
 interface Project {
   id: string
@@ -171,7 +172,7 @@ export default function PendingProjectsPage() {
         <div className="space-y-6">
           {projects.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-              <div className="text-gray-400 text-6xl mb-4">📋</div>
+              <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-gray-900 mb-2">ไม่มีโปรเจคที่รอการอนุมัติ</h3>
               <p className="text-gray-600">ขณะนี้ไม่มีโปรเจคใหม่ที่รอการพิจารณา</p>
             </div>

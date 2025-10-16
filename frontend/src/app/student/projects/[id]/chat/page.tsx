@@ -3,6 +3,7 @@
 import { use, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getUserInfo } from "@/utils/auth";
+import { MessageCircle, Lightbulb } from "lucide-react";
 
 type Message = {
   id: string;
@@ -128,6 +129,14 @@ export default function ProjectChat({ params }: { params: Promise<{ id: string }
       return;
     }
 
+    // Wait for user to be loaded before connecting WebSocket
+    if (!user?.id) {
+      console.log('Waiting for user info before connecting WebSocket...');
+      return;
+    }
+
+    console.log('User loaded, connecting WebSocket with user ID:', user.id);
+
     let isUnmounted = false;
     let reconnectAttempts = 0;
     const MAX_RECONNECT_ATTEMPTS = 5;
@@ -206,7 +215,13 @@ export default function ProjectChat({ params }: { params: Promise<{ id: string }
                 break;
 
               case 'typing':
-                if (wsMessage.user_id !== user?.id) {
+                console.log('Typing event received:', {
+                  incoming_user_id: wsMessage.user_id,
+                  current_user_id: user?.id,
+                  are_different: wsMessage.user_id !== user?.id
+                });
+                // Only show typing indicator if it's from someone else
+                if (wsMessage.user_id && user?.id && wsMessage.user_id !== user?.id) {
                   setIsTyping(true);
                   if (typingTimeoutRef.current) {
                     clearTimeout(typingTimeoutRef.current);
@@ -214,6 +229,8 @@ export default function ProjectChat({ params }: { params: Promise<{ id: string }
                   typingTimeoutRef.current = setTimeout(() => {
                     setIsTyping(false);
                   }, 2000);
+                } else {
+                  console.log('Ignoring typing from self');
                 }
                 break;
             }
@@ -307,7 +324,7 @@ export default function ProjectChat({ params }: { params: Promise<{ id: string }
         }
       }
     };
-  }, [id]); // Only re-run when project ID changes
+  }, [id, user]); // Re-run when project ID or user changes
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || sending) return;
@@ -452,7 +469,7 @@ export default function ProjectChat({ params }: { params: Promise<{ id: string }
           >
             {messages.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">💬</div>
+                <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 text-lg">ยังไม่มีข้อความ</p>
                 <p className="text-gray-400 text-sm mt-2">เริ่มการสนทนากับอาจารย์ที่ปรึกษาของคุณ</p>
               </div>
@@ -559,7 +576,7 @@ export default function ProjectChat({ params }: { params: Promise<{ id: string }
         <div className="mt-6 bg-blue-50 rounded-lg p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <div className="text-blue-400 text-xl">💡</div>
+              <Lightbulb className="w-5 h-5 text-blue-400" />
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800">เทคนิคการสื่อสาร</h3>

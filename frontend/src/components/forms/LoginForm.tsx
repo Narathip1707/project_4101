@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Mail, Lock, LogIn, Loader2, UserPlus, ShieldAlert } from 'lucide-react'
 
 // Zod schema สำหรับ validation
 const loginSchema = z.object({
@@ -34,14 +35,18 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-          เข้าสู่ระบบ
-        </h1>
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <LogIn className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-800">
+            เข้าสู่ระบบ
+          </h1>
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Email Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              📧 อีเมล
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <Mail className="w-4 h-4 text-blue-600" />
+              <span>อีเมล</span>
             </label>
             <input
               type="email"
@@ -53,16 +58,20 @@ export default function LoginForm() {
               placeholder="กรอกอีเมลของคุณ"
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                ❌ {errors.email.message}
-              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <ShieldAlert className="w-4 h-4 text-red-500" />
+                <p className="text-red-500 text-sm">
+                  {errors.email.message}
+                </p>
+              </div>
             )}
           </div>
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              🔒 รหัสผ่าน
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <Lock className="w-4 h-4 text-blue-600" />
+              <span>รหัสผ่าน</span>
             </label>
             <input
               type="password"
@@ -74,9 +83,12 @@ export default function LoginForm() {
               placeholder="กรอกรหัสผ่านของคุณ"
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                ❌ {errors.password.message}
-              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <ShieldAlert className="w-4 h-4 text-red-500" />
+                <p className="text-red-500 text-sm">
+                  {errors.password.message}
+                </p>
+              </div>
             )}
           </div>
 
@@ -86,15 +98,26 @@ export default function LoginForm() {
             disabled={isSubmitting}
             className="w-full"
           >
-            {isSubmitting ? '🔄 กำลังเข้าสู่ระบบ...' : '🔐 เข้าสู่ระบบ'}
+            {isSubmitting ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>กำลังเข้าสู่ระบบ...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <LogIn className="w-4 h-4" />
+                <span>เข้าสู่ระบบ</span>
+              </div>
+            )}
           </Button>
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            ยังไม่มีบัญชี?{" "}
-            <a href="/signup" className="text-blue-500 hover:text-blue-700 transition-colors duration-300 font-medium">
-              ลงทะเบียน
+          <p className="text-gray-600 flex items-center justify-center gap-2">
+            <span>ยังไม่มีบัญชี?</span>
+            <a href="/signup" className="text-blue-500 hover:text-blue-700 transition-colors duration-300 font-medium flex items-center gap-1">
+              <UserPlus className="w-4 h-4" />
+              <span>ลงทะเบียน</span>
             </a>
           </p>
         </div>

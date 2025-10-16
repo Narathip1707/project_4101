@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
 
 interface StudentDetail {
   id: string;
@@ -633,9 +634,7 @@ export default function EditStudentPage() {
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
-                  📋
-                </div>
+                <ClipboardList className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">นักศึกษายังไม่มีโปรเจค</h3>
                 <p className="text-gray-500 mb-4">นักศึกษาคนนี้ยังไม่ได้สร้างโปรเจคหรือยังไม่ได้รับการอนุมัติ</p>
                 <Link href="/advisor/pending-projects">

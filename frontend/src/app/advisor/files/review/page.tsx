@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FolderOpen, File } from 'lucide-react';
 
 interface FileReview {
   id: string;
@@ -165,9 +166,7 @@ export default function FilesReviewPage() {
         <div className="bg-white rounded-lg shadow-sm">
           {files.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
-                📁
-              </div>
+              <FolderOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <p className="text-gray-500 text-lg">ไม่มีไฟล์ที่ต้องรีวิวในขณะนี้</p>
             </div>
           ) : (
@@ -202,7 +201,7 @@ export default function FilesReviewPage() {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
                             <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                              <span className="text-blue-600 font-medium">📄</span>
+                              <File className="w-5 h-5 text-blue-600" />
                             </div>
                           </div>
                           <div className="ml-4">
