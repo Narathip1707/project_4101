@@ -32,26 +32,31 @@ export default function Login() {
       });
       const result = await response.json();
       
+      if (!response.ok) throw new Error(result.error || "Failed to login");
+      
       // Debug: แสดงข้อมูลที่ได้จาก backend
-      console.log("Login response data:", data);
+      console.log("Login response data:", result);
       
       // ตรวจสอบว่า backend ส่งข้อมูล user และ token มาหรือไม่
-      if (!data.user || !data.token) {
+      if (!result.user || !result.token) {
         throw new Error("No user data or token received from backend");
       }
       
       // บันทึกข้อมูล login และ redirect ตาม role (ใช้ JWT token จริง)
-      const userData = data.user;
+      const userData = result.user;
       console.log("User data for login:", userData);
       
-      login(data.token, userData);
+      login(result.token, userData);
       
       // Redirect ไปหน้าหลัก (/)
       console.log("Login successful, redirecting to home page");
       router.push("/");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-      setError(errorMessage);
+      setError("root", {
+        type: "manual",
+        message: errorMessage,
+      });
     }
   };
 

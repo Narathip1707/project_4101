@@ -1,14 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { User, IdCard, Mail, Phone, Building2, GraduationCap, Calendar, Edit3, Save, X, Camera, FileText, Bell, Settings, Home } from 'lucide-react';
 
@@ -21,34 +13,14 @@ interface UserProfile {
   faculty: string;
   phone: string;
   year: string;
+  profileImage?: string;
 }
-
-const profileSchema = z.object({
-  fullName: z.string().min(1, "Please enter your full name"),
-  email: z.string().min(1, "Please enter email").email("Invalid email format"),
-  studentId: z.string().min(1, "Please enter student ID"),
-  department: z.string().min(1, "Please enter department"),
-  faculty: z.string().min(1, "Please enter faculty"),
-  phone: z.string().min(1, "Please enter phone number"),
-  year: z.string().min(1, "Please enter year"),
-});
-
-type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function Profile() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setError,
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
-  });
+  const [editForm, setEditForm] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -56,18 +28,7 @@ export default function Profile() {
       setIsLoggedIn(true);
       loadUserProfile();
     }
-  }, [reset]);
-
-  const onSubmit = async (data: ProfileFormData) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setUser({ ...user!, ...data });
-      setIsEditing(false);
-      alert("Profile updated successfully!");
-    } catch (err) {
-      setError("root", { message: "Failed to update profile" });
-    }
-  };
+  }, []);
 
   const loadUserProfile = async () => {
     try {
@@ -188,26 +149,41 @@ export default function Profile() {
   };
 
   const handleCancel = () => {
+    setEditForm(user);
     setIsEditing(false);
-    if (user) {
-      reset(user);
+  };
+
+  const handleInputChange = (field: keyof UserProfile, value: string) => {
+    if (editForm) {
+      setEditForm({
+        ...editForm,
+        [field]: value
+      });
     }
   };
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 animate-fadeInUp">
-        <Card className="w-full max-w-md animate-scaleIn">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl animate-fadeInDown">🚫 Access Denied</CardTitle>
-            <CardDescription className="animate-fadeInUp animate-delay-200">Please login to view your profile</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center animate-fadeInUp animate-delay-300">
-            <Link href="/login">
-              <Button className="transition-all duration-300 hover:scale-105 hover:shadow-lg">🔐 Login</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4 text-black">กรุณาเข้าสู่ระบบ</h1>
+          <p className="text-gray-600 mb-6">คุณต้องเข้าสู่ระบบเพื่อดูโปรไฟล์</p>
+          <Link href="/login">
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+              เข้าสู่ระบบ
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-xl text-black">กำลังโหลดข้อมูล...</h1>
+        </div>
       </div>
     );
   }
@@ -266,6 +242,7 @@ export default function Profile() {
                   </button>
                 )}
               </div>
+            </div>
 
             {/* Form Fields */}
             <div>
@@ -389,9 +366,9 @@ export default function Profile() {
               ) : (
                 <p className="p-3 bg-gray-50 rounded-xl text-black">ปี {user.year}</p>
               )}
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
