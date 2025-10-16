@@ -239,7 +239,7 @@ export default function Profile() {
                 {isEditing && (
                   <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-110">
                     <Camera className="w-5 h-5" />
-                  </button>
+                  </button>             
                 )}
               </div>
             </div>
