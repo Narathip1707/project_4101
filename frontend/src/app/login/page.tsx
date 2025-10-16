@@ -32,33 +32,26 @@ export default function Login() {
       });
       const result = await response.json();
       
-      if (!response.ok) {
-        setError("root", {
-          type: "manual",
-          message: result?.message || "เข้าสู่ระบบไม่สำเร็จ",
-        });
-        return;
+      // Debug: แสดงข้อมูลที่ได้จาก backend
+      console.log("Login response data:", data);
+      
+      // ตรวจสอบว่า backend ส่งข้อมูล user และ token มาหรือไม่
+      if (!data.user || !data.token) {
+        throw new Error("No user data or token received from backend");
       }
-
-      // เข้าสู่ระบบสำเร็จ: เก็บ token และข้อมูลผู้ใช้
-      login(result.token, result.user);
-
-      // Redirect ตาม role (fallback ไปหน้าแรก)
-      const role = result?.user?.role as string | undefined;
-      if (role === "student") {
-        router.push("/student/dashboard");
-      } else if (role === "advisor") {
-        router.push("/advisor/dashboard");
-      } else if (role === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/");
-      }
-    } catch (error) {
-      setError("root", {
-        type: "manual",
-        message: "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์",
-      });
+      
+      // บันทึกข้อมูล login และ redirect ตาม role (ใช้ JWT token จริง)
+      const userData = data.user;
+      console.log("User data for login:", userData);
+      
+      login(data.token, userData);
+      
+      // Redirect ไปหน้าหลัก (/)
+      console.log("Login successful, redirecting to home page");
+      router.push("/");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      setError(errorMessage);
     }
   };
 

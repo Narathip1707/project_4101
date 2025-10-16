@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/websocket/v2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -62,6 +63,7 @@ func main() {
 	notificationHandler := handlers.NewNotificationHandler(db)
 	adminHandler := handlers.NewAdminHandler(db)
 	advisorStudentHandler := handlers.NewAdvisorStudentHandler(db)
+	chatHandler := handlers.NewChatHandler(db)
 
 	// Root route
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -119,6 +121,7 @@ func main() {
 	// File endpoints
 	protected.Post("/projects/:id/files", fileHandler.UploadFile)
 	protected.Get("/files/recent", fileHandler.GetRecentFiles)
+	protected.Get("/files/:id", fileHandler.GetFileById)
 	protected.Get("/files/:id/download", fileHandler.DownloadFile)
 	protected.Patch("/files/:id/review", fileHandler.ReviewFile)
 
@@ -141,6 +144,45 @@ func main() {
 	adminRoutes.Put("/users/:id", adminHandler.UpdateUser)
 	adminRoutes.Delete("/users/:id", adminHandler.DeleteUser)
 	adminRoutes.Post("/users/:id/reset-password", adminHandler.ResetPassword)
+
+	// Chat REST endpoints (protected)
+	protected.Get("/chats/:project_id/messages", chatHandler.GetChatHistory)
+	protected.Patch("/chats/:project_id/read", chatHandler.MarkAsRead)
+	protected.Get("/chats/unread", chatHandler.GetUnreadCount)
+
+	// WebSocket endpoint for real-time chat (with JWT authentication middleware)
+	app.Use("/ws", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			// Get token from query parameter for WebSocket upgrade
+			token := c.Query("token")
+			if token == "" {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Missing token",
+				})
+			}
+
+			// Validate token
+			claims, err := models.ValidateJWT(token)
+			if err != nil {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid token",
+				})
+			}
+
+			// Set user context for WebSocket handler
+			c.Locals("user_id", claims.UserID)
+			c.Locals("user_email", claims.Email)
+			c.Locals("user_role", claims.Role)
+			c.Locals("full_name", claims.FullName)
+
+			return c.Next()
+		}
+		return c.Next()
+	})
+
+	app.Get("/ws/chat/:project_id", websocket.New(chatHandler.HandleWebSocket, websocket.Config{
+		EnableCompression: true,
+	}))
 
 	// Starting server
 	serverPort := getEnv("PORT", "8081")
@@ -206,6 +248,28 @@ func signupHandler(c *fiber.Ctx) error {
 
 	if err := db.Create(&user).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create user"})
+	}
+
+	// Auto-create student or advisor record based on role
+	if role == "student" {
+		student := models.Student{
+			UserID: user.ID,
+			Year:   4, // Default to year 4, can be updated later
+		}
+		if err := db.Create(&student).Error; err != nil {
+			log.Printf("Warning: Failed to create student record for user %s: %v", user.ID, err)
+		}
+	} else if role == "advisor" {
+		advisor := models.Advisor{
+			UserID:         user.ID,
+			Title:          "อาจารย์", // Default title
+			MaxStudents:    10,        // Default max students
+			OfficeLocation: "",
+			OfficeHours:    "",
+		}
+		if err := db.Create(&advisor).Error; err != nil {
+			log.Printf("Warning: Failed to create advisor record for user %s: %v", user.ID, err)
+		}
 	}
 
 	return c.JSON(fiber.Map{

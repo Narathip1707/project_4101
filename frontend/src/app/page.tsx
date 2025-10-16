@@ -4,23 +4,57 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { isAuthenticated, getUserInfo } from "@/utils/auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import StarfallBackground from "@/components/StarfallBackground";
-import { Activity } from "@mynaui/icons-react";
-import { AcademicHat } from "@mynaui/icons-react";
+import { Home as HomeIcon, FileText, Bell, User, LogIn, UserPlus, Star, TrendingUp, Calendar, Eye, Briefcase } from 'lucide-react';
+
+interface Project {
+  id: number;
+  title: string;
+  description: string;
+  studentName: string;
+  advisorName: string;
+  status: string;
+  year: string;
+}
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{ fullName: string; role?: "student" | "advisor" | "admin" } | null>(null);
+  const [user, setUser] = useState<{ fullName: string } | null>(null);
+  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     const authenticated = isAuthenticated();
     setIsLoggedIn(authenticated);
 
     if (authenticated) {
-      const userInfo = getUserInfo();
-      setUser(userInfo || { fullName: "Test User" });
+      // ดึงข้อมูลผู้ใช้จาก API
+      try {
+        const token = localStorage.getItem("token");
+        const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+        
+        const response = await fetch(`${baseUrl}/api/profile`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          const formattedUser = {
+            fullName: userData.full_name || userData.fullName || 'ผู้ใช้งาน',
+          };
+          setUser(formattedUser);
+          // อัปเดต localStorage ด้วยข้อมูลล่าสุด
+          localStorage.setItem("userInfo", JSON.stringify({ ...userData, fullName: formattedUser.fullName }));
+        } else {
+          // ถ้า API ไม่ทำงาน ใช้ข้อมูลจาก localStorage
+          const userInfo = getUserInfo();
+          setUser(userInfo || { fullName: "ผู้ใช้งาน" });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // ถ้าเกิด error ใช้ข้อมูลจาก localStorage
+        const userInfo = getUserInfo();
+        setUser(userInfo || { fullName: "ผู้ใช้งาน" });
+      }
     } else {
       setUser(null);
     }
@@ -29,184 +63,207 @@ export default function Home() {
   useEffect(() => {
     // ตรวจสอบสถานะ authentication เริ่มต้น
     checkAuthStatus();
-
-    // ฟัง custom event สำหรับการ login/logout
-    const handleAuthChange = () => {
-      checkAuthStatus();
-    };
-    window.addEventListener("authChange", handleAuthChange);
-
-    return () => {
-      window.removeEventListener("authChange", handleAuthChange);
-    };
+    loadFeaturedProjects();
   }, []);
 
-  if (isLoggedIn && user) {
-    return (
-      <div className="relative min-h-screen bg-white animate-fadeInUp">
-        {/* content wrapper above stars */}
-        <div className="relative z-10">
-          {/* Header with animation + university logo */}
-          <Card className="m-6 border-0 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white animate-spin animate-delay-100 transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-bold animate-scaleIn animate-delay-200">
-                ยินดีต้อนรับ, {user.fullName}! 👋
-              </CardTitle>
-              <CardDescription className="text-blue-100 text-lg animate-fadeInUp animate-delay-300">
-                หน้าโฮมของระบบจัดการโครงงานพิเศษ
-              </CardDescription>
-            </CardHeader>
-          </Card>
+  const loadFeaturedProjects = async () => {
+    try {
+      // Mock data - ในอนาคตจะดึงจาก API จริง
+      const mockProjects: Project[] = [
+        {
+          id: 1,
+          title: "ระบบจัดการโครงงานพิเศษออนไลน์",
+          description: "พัฒนาระบบจัดการโครงงานพิเศษแบบออนไลน์ เพื่ออำนวยความสะดวกในการติดตามและประเมินผล",
+          studentName: "นายสมชาย ใจดี",
+          advisorName: "ผศ.ดร.สมหญิง รักการศึกษา",
+          status: "completed",
+          year: "2024"
+        },
+        {
+          id: 2,
+          title: "แอปพลิเคชันเรียนรู้ภาษาอังกฤษด้วย AI",
+          description: "สร้างแอปพลิเคชันสำหรับฝึกฝนภาษาอังกฤษโดยใช้เทคโนโลยี AI และ Natural Language Processing",
+          studentName: "นางสาวสมศรี เก่งเรียน",
+          advisorName: "อ.ดร.สมพงษ์ ชำนาญการ",
+          status: "completed",
+          year: "2024"
+        },
+        {
+          id: 3,
+          title: "ระบบแนะนำหนังสือด้วย Machine Learning",
+          description: "พัฒนาระบบแนะนำหนังสือที่เหมาะสมตามความสนใจของผู้ใช้โดยใช้เทคนิค Machine Learning",
+          studentName: "นายธนากร วิทยาศาสตร์",
+          advisorName: "ผศ.ดร.วิไล คอมพิวเตอร์",
+          status: "completed",
+          year: "2023"
+        }
+      ];
+      
+      setFeaturedProjects(mockProjects);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading featured projects:', error);
+      setLoading(false);
+    }
+  };
 
-          {/* Title section */}
-          <div className="text-center mb-8 animate-fadeInUp animate-delay-400">
-            <h1 className="text-4xl font-semibold text-gray-800 border-b-4 border-blue-500 inline-block pb-2 transform transition-all duration-300 hover:scale-101">
-              🎓 ตัวอย่างโครงงานพิเศษ
-            </h1>
-          </div>
-
-          {/* Project cards with staggered animations */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mx-6 mb-8">
-            {[
-              {
-                id: "1",
-                title: "ระบบจัดการข้อมูลนักศึกษาออนไลน์",
-                desc: "พัฒนาระบบเว็บแอปพลิเคชันสำหรับจัดการข้อมูลนักศึกษา รวมถึงการลงทะเบียนเรียน การดูผลการเรียน",
-                status: "กำลังดำเนินการ",
-                advisor: "อ.ดร.สมชาย ใจดี"
-              },
-              {
-                id: "2",
-                title: "แอปพลิเคชันจัดการคลังสินค้า",
-                desc: "สร้างแอปพลิเคชันมือถือสำหรับจัดการสต็อกสินค้า ติดตามการเข้า-ออกของสินค้า และสร้างรายงานสรุป",
-                status: "ร่าง",
-                advisor: "อ.ดร.วิไล เก่งมาก"
-              },
-              {
-                id: "3",
-                title: "ระบบแนะนำหนังสือด้วย AI",
-                desc: "พัฒนาระบบแนะนำหนังสือโดยใช้เทคนิค Machine Learning เพื่อวิเคราะห์ความชอบของผู้ใช้",
-                status: "อนุมัติแล้ว",
-                advisor: "อ.ดร.ปัญญา เจ้าปัญญา"
-              },
-            ].map((project, idx) => (
-              <Card
-                key={idx}
-                className={`hover:shadow-xl transition-all duration-500 hover:scale-110 transform animate-fadeInUp animate-delay-${(idx + 5) * 100} hover-lift`}
-              >
-                <CardHeader className="animate-fadeInDown animate-delay-600">
-                  <CardTitle className="text-xl text-blue-800 transition-colors duration-300 hover:text-blue-600">
-                    {project.title}
-                  </CardTitle>
-                  <CardDescription className="animate-fadeInUp animate-delay-700">
-                    {project.desc}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="animate-fadeInUp animate-delay-800">
-                  <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-600 transform transition-all duration-300 hover:text-gray-800">
-                      <span className="font-medium">อาจารย์ที่ปรึกษา:</span> {project.advisor}
-                    </p>
-                    <p className="text-sm">
-                      <span className="font-medium">สถานะ:</span>
-                      <span className={`ml-2 px-2 py-1 rounded text-xs transition-all duration-300 transform hover:scale-110 ${project.status === "อนุมัติแล้ว" ? "bg-green-100 text-green-800 animate-pulse" :
-                          project.status === "กำลังดำเนินการ" ? "bg-blue-100 text-blue-800" :
-                            "bg-gray-100 text-gray-800"
-                        }`}>
-                        {project.status}
-                      </span>
-                    </p>
-                  </div>
-                  <Link href={`/projects/${project.id}`}>
-                    <Button className="w-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg animate-fadeInUp animate-delay-900">
-                      📋 ดูรายละเอียด
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Action buttons with enhanced animations */}
-          <Card className="mx-6 mb-6 animate-slideInFromBottom animate-delay-1000 transform transition-all duration-500 hover:shadow-xl hover:scale-101">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 place-items-center">
-                {/* Dashboard (role-based) */}
-                <Link href={(user?.role === "student" && "/student/dashboard") || (user?.role === "advisor" && "/advisor/dashboard") || (user?.role === "admin" && "/admin/dashboard") || "/"}>
-                  <Button className="w-64 h-16 text-lg rounded-xl bg-gray-900 hover:bg-gray-800 text-white border border-gray-800/60 animate-fadeInUp animate-delay-1000 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
-                    <span className="flex items-center justify-center space-x-2">
-                      <span className="animate-bounce"><AcademicHat /></span>
-                      <span>Dashboard</span>
-                    </span>
-                  </Button>
-                </Link>
-                <Link href="/projects">
-                  <Button className="w-64 h-16 text-lg rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/60 animate-fadeInLeft animate-delay-1100 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
-                    <span className="flex items-center justify-center space-x-2">
-                      <span className="animate-bounce"><Activity /></span>
-                      <span>ดูโครงงาน</span>
-                    </span>
-                  </Button>
-                </Link>
-
-                <Link href="/notifications">
-                  <Button className="w-64 h-16 text-lg rounded-xl bg-white-600 hover:bg-fuchsia-500 text-black border border-fuchsia-500/30 animate-fadeInRight animate-delay-1300 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
-                    <span className="flex items-center justify-center space-x-2">
-                      <span className="animate-bounce">🔔</span>
-                      <span>ดูการแจ้งเตือน</span>
-                    </span>
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">เสร็จสมบูรณ์</span>;
+      case 'in_progress':
+        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">กำลังดำเนินการ</span>;
+      default:
+        return <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium">ไม่ทราบสถานะ</span>;
+    }
+  };
 
   return (
-    <div className="relative min-h-screen bg-white flex items-center justify-center p-4 animate-accordion-down">
-      {/* starfall background */}
-      <StarfallBackground />
-      <Card className="relative z-10 w-full max-w-md animate-scaleIn transform transition-all duration-500 hover:scale-101 hover:shadow-2xl">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-3 mb-2 animate-scaleIn animate-delay-100">
-            <Image
-              src="/ramkhamhaeng-logo.svg"
-              alt="Ramkhamhaeng University Logo"
-              width={44}
-              height={44}
-              className="h-50 w-50"
-              priority
-            />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r py-5 from-[#35393C] to-[#2F3234] mb-16">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium mb-6">
+            <Star className="w-4 h-4" />
+            ระบบจัดการโครงงานพิเศษ
           </div>
-          <CardTitle className="text-3xl font-bold mb-4 animate-fadeInDown animate-delay-200">
-            🎓 ระบบจัดการโครงงานพิเศษ
-          </CardTitle>
-          <CardDescription className="text-lg animate-fadeInUp animate-delay-300">
-            กรุณาเข้าสู่ระบบหรือลงทะเบียนเพื่อเริ่มต้น
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 animate-fadeInUp animate-delay-400">
-          <Link href="/login">
-            <Button className="w-full mb-1 h-12 text-lg bg-gradient-to-r from-blue-600 to-yellow-500 hover:from-blue-700 hover:to-yellow-600 text-white animate-fadeInLeft animate-delay-500 transition-all duration-300 transform hover:scale-110 hover:shadow-xl border-0">
-              <span className="flex items-center justify-center space-x-2">
-                <span className="animate-pulse">🔐</span>
-                <span>เข้าสู่ระบบ</span>
-              </span>
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button className="w-full h-12 text-lg bg-gradient-to-r from-yellow-500 to-blue-600 hover:from-yellow-600 hover:to-blue-700 text-white animate-fadeInRight animate-delay-600 transition-all duration-300 transform hover:scale-110 hover:shadow-xl border-0">
-              <span className="flex items-center justify-center space-x-2">
-                <span className="animate-bounce">📝</span>
-                <span>ลงทะเบียน</span>
-              </span>
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+          <h1 className="text-5xl font-bold text-white mb-6">
+            {isLoggedIn && user ? `ยินดีต้อนรับ, ${user.fullName}` : 'ยินดีต้อนรับสู่ระบบจัดการโครงงานพิเศษ'}
+          </h1>
+          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+            ค้นพบโครงงานที่น่าสนใจ เรียนรู้จากผลงานของรุ่นพี่ และสร้างสรรค์โครงงานของคุณเอง
+          </p>
+          
+          {!isLoggedIn && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="/login" 
+                className="flex items-center justify-center gap-2 bg-white text-[#0000FF] px-8 py-3 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
+              >
+                <LogIn className="w-5 h-5" />
+                เข้าสู่ระบบ
+              </Link>
+              <Link 
+                href="/signup" 
+                className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm text-white border-2 border-white px-8 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
+              >
+                <UserPlus className="w-5 h-5" />
+                ลงทะเบียน
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Featured Projects Section */}
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="w-8 h-8 text-[#0000FF]" />
+              <h2 className="text-3xl font-bold text-gray-900">โครงงานแนะนำ</h2>
+            </div>
+            <p className="text-gray-600">โครงงานที่โดดเด่นและน่าสนใจ</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0000FF] mx-auto"></div>
+            <p className="text-gray-600 mt-4">กำลังโหลดโครงงาน...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredProjects.map((project) => (
+              <div
+                key={project.id}
+                className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 group"
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    {getStatusBadge(project.status)}
+                    <div className="flex items-center gap-1 text-gray-500 text-sm">
+                      <Calendar className="w-4 h-4" />
+                      {project.year}
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-[#0000FF] transition-colors">
+                    {project.title}
+                  </h3>
+                  
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {project.description}
+                  </p>
+                  
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-700">
+                        <span className="font-medium">นักศึกษา:</span> {project.studentName}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Briefcase className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-700">
+                        <span className="font-medium">อาจารย์:</span> {project.advisorName}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {isLoggedIn ? (
+                    <Link
+                      href={`/projects/${project.id}`}
+                      className="flex items-center justify-center gap-2 w-full bg-[#0000FF] text-white px-4 py-2.5 rounded-xl hover:bg-[#0000CC] transition-all duration-300 shadow-md hover:shadow-lg font-medium group"
+                    >
+                      <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      ดูรายละเอียด
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="flex items-center justify-center gap-2 w-full bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-300 transition-all duration-300 shadow-md hover:shadow-lg font-medium group"
+                    >
+                      <LogIn className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      เข้าสู่ระบบเพื่อดูเพิ่มเติม
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* CTA Section */}
+      {!isLoggedIn && (
+        <div className="max-w-4xl mx-auto px-6 py-16">
+          <div className="bg-gradient-to-r from-[#0000FF] to-[#0000CC] rounded-3xl p-12 text-center shadow-2xl">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              พร้อมที่จะเริ่มต้นแล้วหรือยัง?
+            </h2>
+            <p className="text-white/90 text-lg mb-8">
+              เข้าสู่ระบบเพื่อสร้างและจัดการโครงงานของคุณ
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="/login" 
+                className="flex items-center justify-center gap-2 bg-white text-[#0000FF] px-8 py-3 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
+              >
+                <LogIn className="w-5 h-5" />
+                เข้าสู่ระบบ
+              </Link>
+              <Link 
+                href="/signup" 
+                className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm text-white border-2 border-white px-8 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
+              >
+                <UserPlus className="w-5 h-5" />
+                ลงทะเบียนใหม่
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

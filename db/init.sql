@@ -182,6 +182,22 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
 ('allowed_file_types', 'pdf,doc,docx,ppt,pptx,zip,rar', 'ประเภทไฟล์ที่อนุญาต'),
 ('notification_email_enabled', 'true', 'เปิดใช้งานการแจ้งเตือนผ่าน Email');
 
+-- Chat messages table
+CREATE TABLE chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    sender_role VARCHAR(20) NOT NULL CHECK (sender_role IN ('student', 'advisor')),
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster queries
+CREATE INDEX idx_chat_messages_project ON chat_messages(project_id);
+CREATE INDEX idx_chat_messages_created ON chat_messages(created_at DESC);
+
 INSERT INTO users (email, password_hash, full_name, role, is_verified, student_id) VALUES
 ('admin@rumail.ru.ac.th', '$2a$10$ZMug6Ajy03J14alMl9/SFO6azhvL5fMLTfXQjYHl0tgUY1IAKP4GK', 'ผู้ดูแลระบบ', 'admin', TRUE, NULL),
 ('advisor1@rumail.ru.ac.th', '$2a$10$aNAqEY0fUm3mlovQ2SNaxuu8L.VNFc8fXPxkn18kOzWZMh1jRQBku', 'ผศ.ดร.สมชาย วิทยาคอม', 'advisor', TRUE, NULL),

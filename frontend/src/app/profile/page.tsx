@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { User, IdCard, Mail, Phone, Building2, GraduationCap, Calendar, Edit3, Save, X, Camera, FileText, Bell, Settings, Home } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -53,18 +54,7 @@ export default function Profile() {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
-      const mockUser = {
-        id: "1",
-        fullName: "Test User",
-        email: "test@email.ru.ac.th",
-        studentId: "64114000000",
-        department: "Computer Science",
-        faculty: "Science",
-        phone: "081-234-5678",
-        year: "4"
-      };
-      setUser(mockUser);
-      reset(mockUser);
+      loadUserProfile();
     }
   }, [reset]);
 
@@ -79,10 +69,121 @@ export default function Profile() {
     }
   };
 
+  const loadUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+      
+      const response = await fetch(`${baseUrl}/api/profile`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        const formattedUser = {
+          id: userData.id,
+          fullName: userData.full_name || userData.fullName || 'ไม่มีชื่อ',
+          email: userData.email || 'ไม่มีอีเมล',
+          studentId: userData.student_id || userData.employee_id || 'ไม่มีรหัส',
+          department: userData.department || 'ไม่ระบุแผนก',
+          faculty: userData.faculty || 'ไม่ระบุคณะ',
+          phone: userData.phone || 'ไม่ระบุเบอร์โทร',
+          year: userData.year || userData.academic_year || 'ไม่ระบุปี',
+          profileImage: userData.profile_image
+        };
+        setUser(formattedUser);
+        setEditForm(formattedUser);
+      } else {
+        // Fallback to localStorage userInfo if API fails
+        const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+        const fallbackUser = {
+          id: userInfo.id || "1",
+          fullName: userInfo.fullName || userInfo.full_name || "ไม่มีชื่อ",
+          email: userInfo.email || "ไม่มีอีเมล",
+          studentId: userInfo.studentId || userInfo.student_id || userInfo.employee_id || "ไม่มีรหัส",
+          department: userInfo.department || "ไม่ระบุแผนก",
+          faculty: userInfo.faculty || "ไม่ระบุคณะ",
+          phone: userInfo.phone || "ไม่ระบุเบอร์โทร",
+          year: userInfo.year || "ไม่ระบุปี"
+        };
+        setUser(fallbackUser);
+        setEditForm(fallbackUser);
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+      // Use fallback data from localStorage
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      const fallbackUser = {
+        id: userInfo.id || "1",
+        fullName: userInfo.fullName || userInfo.full_name || "ไม่มีชื่อ",
+        email: userInfo.email || "ไม่มีอีเมล",
+        studentId: userInfo.studentId || userInfo.student_id || userInfo.employee_id || "ไม่มีรหัส",
+        department: userInfo.department || "ไม่ระบุแผนก",
+        faculty: userInfo.faculty || "ไม่ระบุคณะ",
+        phone: userInfo.phone || "ไม่ระบุเบอร์โทร",
+        year: userInfo.year || "ไม่ระบุปี"
+      };
+      setUser(fallbackUser);
+      setEditForm(fallbackUser);
+    }
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
-    if (user) {
-      reset(user);
+  };
+
+  const handleSave = async () => {
+    if (editForm) {
+      try {
+        const token = localStorage.getItem("token");
+        const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
+        
+        const response = await fetch(`${baseUrl}/api/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            full_name: editForm.fullName,
+            email: editForm.email,
+            phone: editForm.phone,
+            department: editForm.department,
+            faculty: editForm.faculty,
+            year: editForm.year
+          })
+        });
+        
+        if (response.ok) {
+          setUser(editForm);
+          // Update localStorage userInfo as well
+          const currentUserInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+          const updatedUserInfo = {
+            ...currentUserInfo,
+            fullName: editForm.fullName,
+            full_name: editForm.fullName,
+            email: editForm.email,
+            phone: editForm.phone,
+            department: editForm.department,
+            faculty: editForm.faculty,
+            year: editForm.year
+          };
+          localStorage.setItem("userInfo", JSON.stringify(updatedUserInfo));
+        } else {
+          console.error("Failed to update profile");
+          alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่");
+          return;
+        }
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        return;
+      }
+      
+      setUser(editForm);
+      setIsEditing(false);
+      // ในอนาคตจะเป็น API Call เพื่อบันทึกข้อมูล
+      alert("บันทึกข้อมูลเรียบร้อยแล้ว");
     }
   };
 
@@ -112,243 +213,228 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 animate-fadeInUp">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header Card with animation */}
-        <Card className="animate-fadeInDown animate-delay-100 transform transition-all duration-500 hover:scale-105 hover:shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center animate-scaleIn animate-delay-200">
-              👤 User Profile
-            </CardTitle>
-            <CardDescription className="text-center animate-fadeInUp animate-delay-300">
-              Manage your personal information
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        {/* Main Profile Card with staggered animation */}
-        <Card className="animate-fadeInUp animate-delay-200 transform transition-all duration-500 hover:shadow-xl">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="animate-fadeInLeft animate-delay-300">📋 Personal Information</CardTitle>
-              {!isEditing ? (
-                <Button 
-                  onClick={handleEdit} 
-                  variant="outline"
-                  className="animate-fadeInRight animate-delay-400 transition-all duration-300 hover:scale-110 hover:shadow-md hover:bg-blue-50"
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Profile Card */}
+        <div className="bg-white shadow-xl rounded-2xl p-8 mb-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัว</h2>
+            </div>
+            {!isEditing ? (
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl group"
+              >
+                <Edit3 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+                แก้ไขข้อมูล
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 transition-all duration-300 shadow-lg hover:shadow-xl group"
                 >
-                  ✏️ Edit
-                </Button>
-              ) : (
-                <div className="space-x-2 animate-fadeInRight animate-delay-300">
-                  <Button 
-                    onClick={handleCancel} 
-                    variant="outline"
-                    className="transition-all duration-300 hover:scale-110 hover:shadow-md hover:bg-red-50"
-                  >
-                    ❌ Cancel
-                  </Button>
+                  <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
+                  บันทึก
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="flex items-center gap-2 bg-gray-500 text-white px-5 py-2.5 rounded-xl hover:bg-gray-600 transition-all duration-300 shadow-lg hover:shadow-xl group"
+                >
+                  <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                  ยกเลิก
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Profile Image */}
+            <div className="md:col-span-2 flex justify-center mb-6">
+              <div className="relative group">
+                <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-300">
+                  <User className="w-16 h-16 text-white" />
                 </div>
+                {isEditing && (
+                  <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <Camera className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+            {/* Form Fields */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <User className="w-4 h-4 text-blue-600" />
+                ชื่อ-นามสกุล
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editForm?.fullName || ""}
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.fullName}</p>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="animate-fadeInUp animate-delay-400">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* Full Name - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-500 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="fullName" className="font-medium">👤 Full Name</Label>
-                <Input
-                  id="fullName"
-                  {...register("fullName")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.fullName && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
-                />
-                {errors.fullName && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.fullName.message}</p>
-                )}
-              </div>
 
-              {/* Email - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-600 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="email" className="font-medium">📧 Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.email && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <IdCard className="w-4 h-4 text-purple-600" />
+                รหัสนักศึกษา
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editForm?.studentId || ""}
+                  onChange={(e) => handleInputChange("studentId", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 />
-                {errors.email && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.email.message}</p>
-                )}
-              </div>
-
-              {/* Student ID - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-700 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="studentId" className="font-medium">🆔 Student ID</Label>
-                <Input
-                  id="studentId"
-                  {...register("studentId")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.studentId && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
-                />
-                {errors.studentId && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.studentId.message}</p>
-                )}
-              </div>
-
-              {/* Phone - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-800 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="phone" className="font-medium">📱 Phone</Label>
-                <Input
-                  id="phone"
-                  {...register("phone")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.phone && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.phone.message}</p>
-                )}
-              </div>
-
-              {/* Department - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-900 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="department" className="font-medium">🏢 Department</Label>
-                <Input
-                  id="department"
-                  {...register("department")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.department && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
-                />
-                {errors.department && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.department.message}</p>
-                )}
-              </div>
-
-              {/* Faculty - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-1000 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="faculty" className="font-medium">🏛️ Faculty</Label>
-                <Input
-                  id="faculty"
-                  {...register("faculty")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.faculty && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
-                />
-                {errors.faculty && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.faculty.message}</p>
-                )}
-              </div>
-
-              {/* Year - with staggered animation */}
-              <div className="space-y-2 animate-fadeInLeft animate-delay-1100 transform transition-all duration-300 hover:scale-105">
-                <Label htmlFor="year" className="font-medium">📚 Year</Label>
-                <Input
-                  id="year"
-                  {...register("year")}
-                  disabled={!isEditing}
-                  className={cn(
-                    "transition-all duration-300 transform hover:scale-105 focus:scale-105",
-                    !isEditing && "bg-gray-50 hover:bg-gray-100",
-                    isEditing && "hover:shadow-md focus:shadow-lg",
-                    errors.year && "border-red-500 focus-visible:ring-red-500 animate-pulse"
-                  )}
-                />
-                {errors.year && (
-                  <p className="text-sm text-red-500 animate-fadeInUp">❌ {errors.year.message}</p>
-                )}
-              </div>
-              {/* Error Message with animation */}
-              {errors.root && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 animate-fadeInUp animate-delay-300">
-                  <p className="text-sm text-red-600 animate-pulse">❌ {errors.root.message}</p>
-                </div>
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.studentId}</p>
               )}
+            </div>
 
-              {/* Submit Button with enhanced animations */}
-              {isEditing && (
-                <Button 
-                  type="submit" 
-                  className="w-full animate-slideInFromBottom animate-delay-1200 transition-all duration-300 transform hover:scale-105 hover:shadow-xl" 
-                  disabled={isSubmitting}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Mail className="w-4 h-4 text-red-600" />
+                อีเมล
+              </label>
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={editForm?.email || ""}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Phone className="w-4 h-4 text-green-600" />
+                เบอร์โทรศัพท์
+              </label>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  value={editForm?.phone || ""}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.phone}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                ภาควิชา
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editForm?.department || ""}
+                  onChange={(e) => handleInputChange("department", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.department}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <GraduationCap className="w-4 h-4 text-amber-600" />
+                คณะ
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editForm?.faculty || ""}
+                  onChange={(e) => handleInputChange("faculty", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">{user.faculty}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 text-pink-600" />
+                ชั้นปี
+              </label>
+              {isEditing ? (
+                <select
+                  value={editForm?.year || ""}
+                  onChange={(e) => handleInputChange("year", e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black transition-all duration-300"
                 >
-                  {isSubmitting ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span className="animate-pulse">Saving...</span>
-                    </div>
-                  ) : (
-                    <span className="flex items-center justify-center space-x-2 animate-bounce">
-                      <span>💾</span>
-                      <span>Save Changes</span>
-                    </span>
-                  )}
-                </Button>
+                  <option value="1">ปี 1</option>
+                  <option value="2">ปี 2</option>
+                  <option value="3">ปี 3</option>
+                  <option value="4">ปี 4</option>
+                </select>
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl text-black">ปี {user.year}</p>
               )}
             </form>
           </CardContent>
         </Card>
 
-        {/* Action Buttons Card with enhanced animations */}
-        <Card className="animate-slideInFromBottom animate-delay-400 transform transition-all duration-500 hover:shadow-xl hover:scale-105">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link href="/">
-                <Button 
-                  variant="outline" 
-                  className="w-full animate-fadeInLeft animate-delay-500 transition-all duration-300 transform hover:scale-110 hover:shadow-lg hover:bg-blue-50"
-                >
-                  <span className="flex items-center justify-center space-x-2">
-                    <span className="animate-bounce">🏠</span>
-                    <span>Back to Home</span>
-                  </span>
-                </Button>
-              </Link>
-              <Button 
-                variant="destructive" 
-                className="w-full animate-fadeInRight animate-delay-600 transition-all duration-300 transform hover:scale-110 hover:shadow-lg"
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  window.location.href = "/login";
-                }}
-              >
-                <span className="flex items-center justify-center space-x-2">
-                  <span className="animate-pulse">🚪</span>
-                  <span>Logout</span>
-                </span>
-              </Button>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Link href="/projects" className="group bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors duration-300">
+                <FileText className="w-8 h-8 text-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">โครงงานของฉัน</h3>
+              <p className="text-gray-600 text-sm">ดูและจัดการโครงงานพิเศษ</p>
             </div>
-          </CardContent>
-        </Card>
+          </Link>
+
+          <Link href="/notifications" className="group bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-amber-100 transition-colors duration-300">
+                <Bell className="w-8 h-8 text-amber-600 group-hover:scale-110 group-hover:animate-pulse transition-all duration-300" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">การแจ้งเตือน</h3>
+              <p className="text-gray-600 text-sm">ดูการแจ้งเตือนและข่าวสาร</p>
+            </div>
+          </Link>
+
+          <Link href="/settings" className="group bg-white shadow-lg rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-100 transition-colors duration-300">
+                <Settings className="w-8 h-8 text-purple-600 group-hover:rotate-90 transition-all duration-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">ตั้งค่า</h3>
+              <p className="text-gray-600 text-sm">จัดการการตั้งค่าระบบ</p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Back to Home */}
+        <div className="text-center">
+          <Link href="/">
+            <button className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl mx-auto group">
+              <Home className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              กลับสู่หน้าหลัก
+            </button>
+          </Link>
+        </div>
       </div>
     </div>
   );

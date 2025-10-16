@@ -123,7 +123,7 @@ export default function NewProjectPage() {
                 value={formData.title}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-700 rounded-lg placeholder:text-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="ระบุชื่อโปรเจค"
               />
             </div>
@@ -138,7 +138,7 @@ export default function NewProjectPage() {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border placeholder:text-gray-500 text-gray-900 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="อธิบายรายละเอียดของโปรเจค"
               />
             </div>
@@ -153,7 +153,7 @@ export default function NewProjectPage() {
                 value={formData.advisor_id}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">เลือกอาจารย์ที่ปรึกษา</option>
                 {advisors.map((advisor) => (
@@ -177,7 +177,7 @@ export default function NewProjectPage() {
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border placeholder:text-gray-900 text-gray-900 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">เลือกหมวดหมู่</option>
                 <option value="Web Development">Web Development</option>
@@ -201,7 +201,7 @@ export default function NewProjectPage() {
                 name="due_date"
                 value={formData.due_date}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -217,7 +217,7 @@ export default function NewProjectPage() {
               <button
                 type="submit"
                 disabled={loading || !formData.title.trim() || !formData.advisor_id}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="flex-1 bg-blue-600 hover:bg-blue-700  disabled:bg-gray-400 text-black px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 {loading ? 'กำลังสร้าง...' : 'สร้างโปรเจค'}
               </button>

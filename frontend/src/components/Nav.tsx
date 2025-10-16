@@ -3,14 +3,16 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { logout, isAuthenticated, getUserInfo } from "@/utils/auth";
-import { Button } from "@/components/ui/button";
+import { Home, FileText, Bell, User, LogIn, UserPlus, LogOut, ChevronDown, GraduationCap, Briefcase, LayoutDashboard } from 'lucide-react';
 
 export default function Nav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{ fullName: string } | null>(null);
+  const [user, setUser] = useState<{ fullName: string; role?: string } | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   // ฟังก์ชันตรวจสอบสถานะการ login
   const checkAuthStatus = () => {
@@ -19,7 +21,7 @@ export default function Nav() {
     
     if (authenticated) {
       const userInfo = getUserInfo();
-      setUser(userInfo || { fullName: "Test User" });
+      setUser(userInfo || { fullName: "Test User", role: "student" });
     } else {
       setUser(null);
     }
@@ -52,63 +54,221 @@ export default function Nav() {
 
   const handleLogout = () => {
     logout();
-    // Force refresh หน้าหลักเพื่อให้แสดง login form
-    window.location.href = "/";
+    setShowDropdown(false);
+    router.push("/");
+    // Refresh หน้าเว็บหลังจาก logout
+    window.location.reload();
+  };
+
+  const getDashboardLink = () => {
+    if (user?.role === 'advisor') {
+      return '/advisor/dashboard';
+    }
+    return '/student/dashboard';
+  };
+
+  const getProjectsLink = () => {
+    if (user?.role === 'advisor') {
+      return '/advisor/dashboard';
+    }
+    return '/student/projects';
+  };
+
+  // ฟังก์ชันสำหรับจัดการคลิกเมนูเมื่อยังไม่ได้ login
+  const handleProtectedLinkClick = (e: React.MouseEvent, href: string) => {
+    if (!isLoggedIn && pathname !== '/') {
+      e.preventDefault();
+      router.push('/login');
+    }
   };
 
   return (
-    <nav className="bg-[rgba(4,9,30,1)] p-4 animate-fadeInDown">
+    <nav className="bg-[rgba(4,9,30,1)] p-4 animate-fadeInDown shadow-lg relative z-[100]">
       <div className="container mx-auto flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-2 text-white text-lg font-bold hover-scale transition-all duration-300">
-          <Image
-            src="/ramkhamhaeng-logo.svg"
+        <Link href="/" className="flex items-center gap-3 text-white text-lg font-bold hover-scale transition-all duration-300">
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Emblem_of_Ramkhamhaeng_University%2C_BW.svg/256px-Emblem_of_Ramkhamhaeng_University%2C_BW.svg.png?20200602181442" 
             alt="Ramkhamhaeng University Logo"
-            width={100}
-            height={100}
-            className="h-12 w-12"
-            priority
+            width="32"
+            height="32"
+            className="rounded bg-white/5 p-0.5 hover:bg-white/10 transition-all duration-300"
           />
-          <span>Ramkhamhaeng University</span>
+          Ramkhamhaeng University
         </Link>
-        <div className="flex items-center gap-2 animate-fadeInLeft animate-delay-200">
+
+        <div className="flex items-center space-x-6 animate-fadeInLeft animate-delay-200">
           {!isLoggedIn ? (
             <>
-              <Button
-                asChild
-                className="rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-200 shadow-sm hover:shadow-md px-4"
-              >
-                <Link href="/login">🔐 เข้าสู่ระบบ</Link>
-              </Button>
-              <Button
-                asChild
-                className="rounded-full text-black border border-white/25 hover:bg-white/10 backdrop-blur-sm transition-all duration-200 px-4"
-                variant="outline"
-              >
-                <Link href="/signup">📝 ลงทะเบียน</Link>
-              </Button>
+              <Link href="/login" className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-blue-200">
+                <LogIn className="w-4 h-4" />
+                เข้าสู่ระบบ
+              </Link>
+              <Link href="/signup" className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-green-200">
+                <UserPlus className="w-4 h-4" />
+                ลงทะเบียน
+              </Link>
             </>
           ) : (
             <>
-              <span className="text-white/80 animate-fadeInRight hidden sm:inline-block mr-2">
-                👋 ยินดีต้อนรับ, {user?.fullName}
-              </span>
-              <Button
-                asChild
-                className="rounded-full text-black border border-white/25 hover:bg-white/1 hover:text-white backdrop-blur-sm transition-all duration-200 px-4"
-                variant="outline"
-              >
-                <Link href="/profile">👤 โปรไฟล์</Link>
-              </Button>
-              <Button
-                onClick={handleLogout}
-                className="rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-all duration-200 shadow-sm hover:shadow-md px-4"
-              >
-                🚪 ออกจากระบบ
-              </Button>
+              {/* Main Navigation Menu */}
+              <div className="hidden md:flex items-center space-x-4">
+                <Link 
+                  href="/" 
+                  className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-blue-200"
+                >
+                  <Home className="w-4 h-4" />
+                  หน้าหลัก
+                </Link>
+                
+                <Link 
+                  href={getDashboardLink()} 
+                  className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-indigo-200"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
+                
+                <Link 
+                  href={getProjectsLink()} 
+                  className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-green-200"
+                >
+                  <FileText className="w-4 h-4" />
+                  โปรเจค
+                </Link>
+                
+                <Link 
+                  href="/notifications" 
+                  className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-yellow-200"
+                >
+                  <Bell className="w-4 h-4" />
+                  การแจ้งเตือน
+                </Link>
+                
+                <Link 
+                  href="/profile" 
+                  className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-purple-200"
+                >
+                  <User className="w-4 h-4" />
+                  โปรไฟล์
+                </Link>
+              </div>
+
+              {/* User Menu Dropdown */}
+              <div className="relative z-[60]">
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex items-center gap-2 text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all duration-300 backdrop-blur-sm relative z-[60]"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                    {user?.fullName?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="hidden sm:inline animate-fadeInRight font-medium">
+                    {user?.fullName}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showDropdown && (
+                  <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[60] animate-fadeInDown">
+                    {/* User Info Header */}
+                    <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                          {user?.fullName?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-800 truncate">{user?.fullName}</div>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {user?.role === 'advisor' ? (
+                              <>
+                                <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                                <span className="text-xs font-medium text-blue-600">อาจารย์</span>
+                              </>
+                            ) : (
+                              <>
+                                <GraduationCap className="w-3.5 h-3.5 text-purple-600" />
+                                <span className="text-xs font-medium text-purple-600">นักศึกษา</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Mobile Menu Items */}
+                    <div className="md:hidden py-1">
+                      <Link 
+                        href="/"
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group"
+                      >
+                        <Home className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">หน้าหลัก</span>
+                      </Link>
+                      <Link 
+                        href={getDashboardLink()}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-200 group"
+                      >
+                        <LayoutDashboard className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">Dashboard</span>
+                      </Link>
+                      <Link 
+                        href={getProjectsLink()}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-all duration-200 group"
+                      >
+                        <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">โปรเจค</span>
+                      </Link>
+                      <Link 
+                        href="/notifications"
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 transition-all duration-200 group"
+                      >
+                        <Bell className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">การแจ้งเตือน</span>
+                      </Link>
+                      <div className="my-1.5 border-t border-gray-200"></div>
+                    </div>
+                    
+                    <div className="py-1">
+                      <Link 
+                        href="/profile"
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 group"
+                      >
+                        <User className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">โปรไฟล์</span>
+                      </Link>
+                    </div>
+                    
+                    <div className="border-t border-gray-200"></div>
+                    
+                    <div className="py-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 group"
+                      >
+                        <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">ออกจากระบบ</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
       </div>
+      
+      {/* Click outside to close dropdown */}
+      {showDropdown && (
+        <div 
+          className="fixed inset-0 z-[50]" 
+          onClick={() => setShowDropdown(false)}
+        />
+      )}
     </nav>
   );
 }

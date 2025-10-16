@@ -26,6 +26,8 @@ export default function ProjectFiles({ params }: { params: Promise<{ id: string 
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("progress_report");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileDescription, setFileDescription] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -103,19 +105,34 @@ export default function ProjectFiles({ params }: { params: Promise<{ id: string 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      alert("กรุณาเลือกไฟล์ก่อน");
+      return;
+    }
+
+    if (!fileDescription.trim()) {
+      alert("กรุณากรอกรายละเอียดไฟล์");
+      return;
+    }
 
     setUploading(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+      const baseUrl = process.env.NEXT_PUBLIC_API || "http://localhost:8081";
       const token = localStorage.getItem("token");
       
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", selectedFile);
       formData.append("project_id", id);
       formData.append("file_category", selectedCategory);
+      formData.append("description", fileDescription);
 
       const response = await fetch(`${baseUrl}/api/projects/${id}/files`, {
         method: "POST",
@@ -125,9 +142,18 @@ export default function ProjectFiles({ params }: { params: Promise<{ id: string 
 
       if (response.ok) {
         await loadFiles(); // Reload files list
+        // Reset form
+        setSelectedFile(null);
+        setFileDescription("");
+        setSelectedCategory("progress_report");
+        // Reset file input
+        const fileInput = document.getElementById('file-input') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+        
         alert("อัปโหลดไฟล์สำเร็จ!");
       } else {
-        alert("ไม่สามารถอัปโหลดไฟล์ได้");
+        const error = await response.json();
+        alert(`ไม่สามารถอัปโหลดไฟล์ได้: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Upload error:", error);
@@ -174,10 +200,11 @@ export default function ProjectFiles({ params }: { params: Promise<{ id: string 
             <h3 className="text-lg font-medium text-gray-900">อัปโหลดไฟล์ใหม่</h3>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  หมวดหมู่ไฟล์
+                  หมวดหมู่ไฟล์ <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedCategory}
@@ -192,29 +219,90 @@ export default function ProjectFiles({ params }: { params: Promise<{ id: string 
                   <option value="other">อื่นๆ</option>
                 </select>
               </div>
+
+              {/* File Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  เลือกไฟล์
+                  รายละเอียดไฟล์ <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
-                  />
-                  {uploading && (
-                    <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <span className="text-sm text-gray-600">กำลังอัปโหลด...</span>
-                      </div>
+                <textarea
+                  value={fileDescription}
+                  onChange={(e) => setFileDescription(e.target.value)}
+                  rows={3}
+                  placeholder="อธิบายเนื้อหาในไฟล์ เช่น รายงานความก้าวหน้าครั้งที่ 1, เอกสารการออกแบบระบบ"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-black focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  ช่วยให้อาจารย์ที่ปรึกษาเข้าใจเนื้อหาในไฟล์ได้ง่ายขึ้น
+                </p>
+              </div>
+
+              {/* File Select */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  เลือกไฟล์ <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center space-x-4">
+                  <label className="flex-shrink-0 cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    เลือกไฟล์
+                    <input
+                      id="file-input"
+                      type="file"
+                      onChange={handleFileSelect}
+                      disabled={uploading}
+                      className="sr-only"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.txt,.jpg,.jpeg,.png"
+                    />
+                  </label>
+                  {selectedFile && (
+                    <div className="flex-1 flex items-center space-x-2 text-sm text-gray-600">
+                      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="truncate">{selectedFile.name}</span>
+                      <span className="text-gray-400">({formatFileSize(selectedFile.size)})</span>
                     </div>
                   )}
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  รองรับไฟล์ PDF, DOC, DOCX, ZIP, RAR (ขนาดไม่เกิน 10MB)
+                  รองรับไฟล์ PDF, DOC, DOCX, PPT, PPTX, ZIP, RAR, TXT, JPG, PNG (ขนาดไม่เกิน 10MB)
                 </p>
+              </div>
+
+              {/* Upload Button */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setFileDescription("");
+                    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+                    if (fileInput) fileInput.value = '';
+                  }}
+                  disabled={uploading || !selectedFile}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleFileUpload}
+                  disabled={uploading || !selectedFile || !fileDescription.trim()}
+                  className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {uploading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      กำลังอัปโหลด...
+                    </span>
+                  ) : (
+                    'ยืนยันส่งไฟล์'
+                  )}
+                </button>
               </div>
             </div>
           </div>

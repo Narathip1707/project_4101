@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/models"
+	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,6 +23,54 @@ func NewProjectHandler(db *gorm.DB) *ProjectHandler {
 func (h *ProjectHandler) GetProjects(c *fiber.Ctx) error {
 	var projects []models.Project
 	query := h.DB.Preload("Student.User").Preload("Advisor.User")
+
+	// Authorization filter based on user role
+	userID := c.Locals("user_id").(string)
+	userRole := c.Locals("user_role").(string)
+
+	log.Printf("GetProjects - UserID: %s, Role: %s", userID, userRole)
+
+	switch userRole {
+	case "student":
+		// Students can only see their own projects
+		// First get student record from user_id
+		var student models.Student
+		if err := h.DB.Where("user_id = ?", userID).First(&student).Error; err != nil {
+			log.Printf("Student record not found for user_id: %s", userID)
+			// Return empty list if no student record
+			return c.JSON(fiber.Map{
+				"data":  []models.Project{},
+				"total": 0,
+				"page":  1,
+				"limit": 10,
+			})
+		}
+		log.Printf("Applying student filter - student_id = %s (from user_id = %s)", student.ID, userID)
+		query = query.Where("student_id = ?", student.ID)
+	case "advisor":
+		// Advisors can see projects they are assigned to
+		// First get advisor record from user_id
+		var advisor models.Advisor
+		if err := h.DB.Where("user_id = ?", userID).First(&advisor).Error; err != nil {
+			log.Printf("Advisor record not found for user_id: %s", userID)
+			// Return empty list if no advisor record
+			return c.JSON(fiber.Map{
+				"data":  []models.Project{},
+				"total": 0,
+				"page":  1,
+				"limit": 10,
+			})
+		}
+		log.Printf("Applying advisor filter - advisor_id = %s (from user_id = %s)", advisor.ID, userID)
+		query = query.Where("advisor_id = ?", advisor.ID)
+	case "admin":
+		// Admins can see all projects (no additional filter)
+		log.Printf("Admin access - no filter applied")
+	default:
+		return c.Status(403).JSON(fiber.Map{
+			"error": "Unauthorized access",
+		})
+	}
 
 	// Search functionality
 	if search := c.Query("q"); search != "" {
@@ -80,7 +129,7 @@ func (h *ProjectHandler) GetProjectFiles(c *fiber.Ctx) error {
 		query = query.Where("is_public = ?", true)
 	}
 
-	if err := query.Order("uploaded_at DESC").Find(&files).Error; err != nil {
+	if err := query.Order("created_at DESC").Find(&files).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error":   "Failed to fetch files",
 			"details": err.Error(),
@@ -92,7 +141,7 @@ func (h *ProjectHandler) GetProjectFiles(c *fiber.Ctx) error {
 
 // CreateProject - POST /api/projects
 func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
-	var input struct {
+	type CreateProjectInput struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Category    string `json:"category"`
@@ -101,6 +150,8 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		Type        string `json:"type"`
 		StudentID   string `json:"student_id"`
 	}
+
+	var input CreateProjectInput
 
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -126,18 +177,28 @@ func (h *ProjectHandler) CreateProject(c *fiber.Ctx) error {
 		input.Type = "individual"
 	}
 
-	// Default student ID for testing (in real app, get from JWT token)
-	studentID := input.StudentID
-	if studentID == "" {
-		studentID = "4a205330-6ae5-4816-8ab7-6736d1ac9002" // Use actual student UUID from students table
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User not authenticated",
+		})
+	}
+
+	// Get student record from user_id
+	var student models.Student
+	if err := h.DB.Where("user_id = ?", userID).First(&student).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Student record not found. Please contact admin.",
+		})
 	}
 
 	// Create new project
 	project := models.Project{
 		Title:       input.Title,
 		Description: input.Description,
-		StudentID:   studentID,
-		Status:      "pending", // Project starts as pending approval
+		StudentID:   student.ID, // ใช้ student.ID จากตาราง students
+		Status:      "pending",  // Project starts as pending approval
 	}
 
 	// Add advisor if provided
