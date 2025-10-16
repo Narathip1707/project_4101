@@ -47,17 +47,9 @@ export default function Login() {
       
       login(data.token, userData);
       
-      // Redirect ตาม role
-      console.log("Redirecting based on role:", userData.role);
-      if (userData.role === "student") {
-        router.push("/student/dashboard");
-      } else if (userData.role === "advisor") {
-        router.push("/advisor/dashboard");
-      } else if (userData.role === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/");
-      }
+      // Redirect ไปหน้าหลัก (/)
+      console.log("Login successful, redirecting to home page");
+      router.push("/");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
       setError(errorMessage);

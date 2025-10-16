@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { logout, isAuthenticated, getUserInfo } from "@/utils/auth";
-import { Home, FileText, Bell, User, LogIn, UserPlus, LogOut, ChevronDown, GraduationCap, Briefcase } from 'lucide-react';
+import { Home, FileText, Bell, User, LogIn, UserPlus, LogOut, ChevronDown, GraduationCap, Briefcase, LayoutDashboard } from 'lucide-react';
 
 export default function Nav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ fullName: string; role?: string } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   // ฟังก์ชันตรวจสอบสถานะการ login
   const checkAuthStatus = () => {
@@ -54,6 +55,8 @@ export default function Nav() {
     logout();
     setShowDropdown(false);
     router.push("/");
+    // Refresh หน้าเว็บหลังจาก logout
+    window.location.reload();
   };
 
   const getDashboardLink = () => {
@@ -68,6 +71,14 @@ export default function Nav() {
       return '/advisor/dashboard';
     }
     return '/student/projects';
+  };
+
+  // ฟังก์ชันสำหรับจัดการคลิกเมนูเมื่อยังไม่ได้ login
+  const handleProtectedLinkClick = (e: React.MouseEvent, href: string) => {
+    if (!isLoggedIn && pathname !== '/') {
+      e.preventDefault();
+      router.push('/login');
+    }
   };
 
   return (
@@ -101,11 +112,19 @@ export default function Nav() {
               {/* Main Navigation Menu */}
               <div className="hidden md:flex items-center space-x-4">
                 <Link 
-                  href={getDashboardLink()} 
+                  href="/" 
                   className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-blue-200"
                 >
                   <Home className="w-4 h-4" />
                   หน้าหลัก
+                </Link>
+                
+                <Link 
+                  href={getDashboardLink()} 
+                  className="flex items-center gap-2 text-white hover:underline transition-all duration-300 hover:text-indigo-200"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
                 </Link>
                 
                 <Link 
@@ -178,12 +197,20 @@ export default function Nav() {
                     {/* Mobile Menu Items */}
                     <div className="md:hidden py-1">
                       <Link 
-                        href={getDashboardLink()}
+                        href="/"
                         onClick={() => setShowDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group"
                       >
                         <Home className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">หน้าแรก</span>
+                        <span className="font-medium">หน้าหลัก</span>
+                      </Link>
+                      <Link 
+                        href={getDashboardLink()}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-200 group"
+                      >
+                        <LayoutDashboard className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">Dashboard</span>
                       </Link>
                       <Link 
                         href={getProjectsLink()}
